@@ -2,16 +2,25 @@
 #Generate Hash
 #Store hash
 import hashFunction
-from cryptography.hazmat.primitives.asymmetric import rsa # RSA Encryption
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.backends import default_backend
-
-import random # For random to generate key pair
+import socket
 import json
 
 class Client:
 
     def __init__(self,username):
+        #Socket Handeling
+        self.ClientForMarket_Socket = socket.socket(
+            socket.AF_INET, socket.SOCK_DGRAM)
+        self.ClientForMarket_Socket.bind(("127.0.0.1", 2600))
+
+        self.ClientForMarket_Socket.connect(("127.0.0.1", 2500))
+
+
+
+
+
+
+
         # Buyer or Seller
         self.type = ""
 
@@ -77,9 +86,22 @@ def foo():
 def sell():
     item = str(input("Item name : "))
     price = str(input("Price for selling : "))
+    data = {'item': item,'price':price , 'pubkey':c1.public_key_str,'type':c1.type}
+    data = str(data)
+    data = data.encode("utf-8")
+
+
+    c1.ClientForMarket_Socket.sendall(data)
+
 def buy():
     item = str(input("Item name : "))
     price = str(input("Price for buying : "))
+    data = {'item': item,'price':price , 'pubkey':c1.public_key_str,'type':c1.type}
+    data = str(data)
+    data = data.encode("utf-8")
+
+
+    c1.ClientForMarket_Socket.sendall(data)
 
 
 
@@ -107,7 +129,10 @@ while True:
                 4. Show public key\n\
                 5. Show Private key\n\
                 6. Clear Screen\n")
-        temp = int(input())
+        try:
+            temp = int(input())
+        except:
+            print("Please input only integers")
         if (temp == 1):
             print(foo())
         if (temp == 2):
@@ -129,7 +154,10 @@ while True:
                 4. Show public key\n\
                 5. Show Private key\n\
                 6. Clear Screen\n")
-        temp = int(input())
+        try:
+            temp = int(input())
+        except:
+            print("Please input only integers")
         if (temp == 1):
             foo()
         if (temp == 2):
