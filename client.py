@@ -1,7 +1,7 @@
 #Check for same users
 #Generate Hash
 #Store hash
-import hashlib # For SHA256
+import hashFunction
 import rsa # RSA Encryption
 import random # For random to generate key pair
 import json
@@ -14,11 +14,7 @@ class Client:
 
 
         # Hash the username
-        hsh = hashlib.sha256()
-        busername = bytes(username,"utf-8")
-        hashed_username = hsh.update(busername)
-        hashed_username = hsh.digest()
-        #print(hsh.hexdigest())
+        hashed_username = hashFunction.getSHA(username,5)
 
 
 
@@ -30,7 +26,7 @@ class Client:
             
             temp = json.loads(line)
 
-            if temp["hashed_username"] == hsh.hexdigest():
+            if temp["hashed_username"] == hashed_username:
                 raise Exception("Duplicate username")
 
         f.close()
@@ -39,9 +35,9 @@ class Client:
         
         # Store into json file
         f = open("clients.json","a")
-        entry = {'username': username,'hashed_username':hsh.hexdigest()}
-        f.write("\n")
+        entry = {'username': username,'hashed_username':hashed_username}
         json.dump (entry,f)
+        f.write("\n")
         f.close()
 
 
@@ -52,7 +48,7 @@ class Client:
         print()
 
 
-#c1 = Client("Bob")
+# c1 = Client("Bob")
 while True:
     try:
         usrname = str(input("Enter username : "))
