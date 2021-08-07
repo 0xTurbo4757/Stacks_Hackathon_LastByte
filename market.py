@@ -59,6 +59,19 @@ class Market:
         return -1
     #EndFunction
 
+    #Returns Merchant Data as Dictionary
+    def Get_Merchant_Data_from_OrderBook(self, target_merchant_public_key):
+        for current_merchant in self.OrderBook:
+
+            if (current_merchant["m_pkey"] == target_merchant_public_key):
+                return current_merchant
+            #EndIf
+        #EndFor
+
+        #Return a None to tell data not found
+        return None
+    #EndFunction
+
     #OK
     def Remove_From_OrderBook(self, merchant_public_key):
 
@@ -73,6 +86,7 @@ class Market:
 
     #OK
     # Checks OrderBook for potential Transactions
+    # Returns a list of tuples of TXN pKeys: buyer,seller
     def Get_All_Potential_TXN_in_OrderBook(self):
         
         #Stores Tuple of Buyer,Seller Public Keys who can Transact
@@ -133,9 +147,83 @@ class Market:
             #EndFor
         #EndFor
 
-        print(potential_TXNs)
+        #Return all possible TXNs
+        return potential_TXNs
     # EndFunction
 
+    #OK
+    def Handle_All_Potential_TXNs_within_OrderBook(self):
+        
+        list_of_all_TXNs_possible = self.Get_All_Potential_TXN_in_OrderBook()
+
+        #There are no TXNs to make
+        if (list_of_all_TXNs_possible == None):
+            return
+        #EndIf
+
+        #For All possible TXNs
+        for current_TXN in self.Get_All_Potential_TXN_in_OrderBook():
+            
+            #If Buyer has enough Balance
+            if (self.Verify_Merchant_has_Enough_Balance(current_TXN[0])):
+
+                #Get Buyer Seller Data as Dict
+                Buyer = self.Get_Merchant_Data_from_OrderBook(current_TXN[0])
+                Seller = self.Get_Merchant_Data_from_OrderBook(current_TXN[1])
+
+                #Error Handling
+                if (Buyer == None or Seller == None):
+                    #TXN cant Happen. Buyer Seller Not Found
+                    print("TXN cant Happen. Buyer {} Seller {} Not Found".format(current_TXN[0], current_TXN[1]))
+                    continue
+                #EndIf
+
+                #Calculate Transfer Ammount
+                transfer_ammount = min(int(Buyer["m_price"]), int(Seller["m_price"]))
+
+                #Request Miner to add TXN in BlockChain
+                self.Request_Verified_TXN_by_Miner(
+
+                    #Send a tuple
+                    (
+                        #Sender Address (Buyer)
+                        current_TXN[0],
+
+                        #Receiver Address (Seller)
+                        current_TXN[1],
+
+                        #Amount Transfered (Min of what buyer was giving and seller was demanding)
+                        transfer_ammount
+                    )
+                )
+
+                #clear OrderBook of Buyer and Seller
+            else:
+                #Tell Buyer here that ur TXN cannot continue, not enough funds
+                pass
+            #EndIf
+        #EndFor
+    #EndFunction
+
+    #SOCKET
+    def Request_Verified_TXN_by_Miner(self, TXN_Data):
+        request_to_send_miner = str(TXN_Data[0])
+        request_to_send_miner += ","
+        request_to_send_miner += str(TXN_Data[1])
+        request_to_send_miner += ","
+        request_to_send_miner += str(TXN_Data[2])
+
+        #Request MINER HERE : SOCKET
+        print("Requested Miner '{}'".format(request_to_send_miner))
+    #EndFunction
+
+    #OK
+    #Returns True or False
+    def Verify_Merchant_has_Enough_Balance(self, merchant_public_key):
+        return (self.Get_Merchant_Current_Balance(merchant_public_key) >= 0)
+    #EndFunction
+
+    #OK
     # Iterates through Blockchain to get latest Balance of the merchant
     def Get_Merchant_Current_Balance(self, merchant_public_key):
 
@@ -182,11 +270,13 @@ class Market:
         return net_merchant_balance
     # EndFunction
 
+    #SOCKET
     #Send OrderBook to the Merchant requesting it
     def Send_OrderBook_to_Merchant(self, merchant_public_key):
         pass
     #EndFunction
     
+    #OK
     def Extract_Data_from_BlockChain_BlockData(self, target_block_data):
         sender_addr = ""
         receiver_addr = ""
@@ -216,6 +306,7 @@ class Market:
         return ((sender_addr, receiver_addr, ammount_transfered))
     #EndFunction
 
+    #
     def Add_Merchant_to_Existing_List(self, merchant_public_key, merchant_network_addr):
 
         self.ExistingMerchantList.append(
@@ -226,6 +317,7 @@ class Market:
         )
     #EndFunction
 
+    #
     def Check_if_Merchant_Exists_in_Existing_List(self, merchant_public_key):
 
         for current_merchant in self.ExistingMerchantList:
@@ -240,7 +332,8 @@ class Market:
         #Did not find merchant in list
         return False
     #EndFunction
-
+    
+    #
     def RunMarket(self):
 
         #Main loop
@@ -248,7 +341,8 @@ class Market:
             pass
         #EndWhile
     #EndFunction
-    
+
+    #OK
     def Get_BlockChain_Size(self):
         return len(self.BlockChain)
     #EndFunction
@@ -284,7 +378,7 @@ class Market:
     #OK
     def Print_BlockChain(self):
         self.Print_JSON_Object(self.BlockChain)
-        print("BlockChain Size: {}".format(len(self.BlockChain)))
+        print("BlockChain Size: {}".format(self.Get_BlockChain_Size()))
     #EndFunction
 # EndClass
 
@@ -305,9 +399,9 @@ def main():
     #print("P Key: {}".format(market.Get_Index_of_merchant_in_OrderBook(1)))
     #print(market.Extract_Data_from_BlockChain_BlockData("56841536845368435684359865,958451856958698546982,500"))
     market.Print_BlockChain()
-    print(market.Get_Merchant_Current_Balance("1"))
+    #print(market.Get_Merchant_Current_Balance("1"))
+    market.Handle_All_Potential_TXNs_within_OrderBook()
 # EndMain
-
 
 if __name__ == "__main__":
     main()
