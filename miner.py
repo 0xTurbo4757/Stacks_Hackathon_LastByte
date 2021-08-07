@@ -4,12 +4,12 @@
 import hashFunction
 import json
 
-blocknumber = 2
+blocknumber = 3
 previousBlockHash = ""
 
 
 # "PKEY,PKEY,PRICE"
-transactionSarib = "Sender2,Reciever2,Price2"
+transactionSarib = "Sender3,Reciever3,Price3"
 
 
 
@@ -42,9 +42,13 @@ else:
 # Serializing json
 json_object = json.dumps(blockdata, indent=4)
 # Writing to sample.json
-with open("BlockChain", "a+") as outfile:
-    outfile.write(json_object)
 
+with open("BlockChain.json", "r+") as fi:
+    data = json.load(fi)
+    data.update(blockdata)
+    fi.write('/n')
+    fi.seek(0)
+    json.dump(data, fi, indent = 4)
 
 
 # Implementing Proof Of WORK
