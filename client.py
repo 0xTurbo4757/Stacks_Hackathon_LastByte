@@ -9,17 +9,9 @@ class Client:
 
     def __init__(self,username):
         #Socket Handeling
-        self.ClientForMarket_Socket = socket.socket(
-            socket.AF_INET, socket.SOCK_DGRAM)
-        self.ClientForMarket_Socket.bind(("127.0.0.1", 2600))
-
-        self.ClientForMarket_Socket.connect(("127.0.0.1", 2500))
-
-
-
-
-
-
+        self.ClientForMarket_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        #self.ClientForMarket_Socket.bind(("localhost", 2600))
+        self.ClientForMarket_Socket.connect(("127.0.0.1", 2600))
 
         # Buyer or Seller
         self.type = ""
@@ -27,8 +19,6 @@ class Client:
 
         # Hash the username
         hashed_username = hashFunction.getSHA(username,5)
-
-
 
 
         # # Check from Json file
@@ -51,7 +41,6 @@ class Client:
         
 
         self.type = temp
-
 
 
         
@@ -86,7 +75,7 @@ def foo():
 def sell():
     item = str(input("Item name : "))
     price = str(input("Price for selling : "))
-    data = {'item': item,'price':price , 'pubkey':c1.public_key_str,'type':c1.type}
+    data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type}
     data = str(data)
     data = data.encode("utf-8")
 
@@ -96,7 +85,7 @@ def sell():
 def buy():
     item = str(input("Item name : "))
     price = str(input("Price for buying : "))
-    data = {'item': item,'price':price , 'pubkey':c1.public_key_str,'type':c1.type}
+    data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type}
     data = str(data)
     data = data.encode("utf-8")
 
@@ -113,7 +102,7 @@ while True:
         
         break
     except Exception as e:
-        #print (e)
+        print (e)
         print("Can't use this username : Already exist (Public key clash)")
     
 

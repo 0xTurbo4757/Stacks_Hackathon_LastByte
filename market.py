@@ -6,13 +6,11 @@ class Market:
     def __init__(self, server_ip, server_port, client_ip, client_port):
 
         # Socket Handling As Server For client.py
-        self.ServerForClient_Socket = socket.socket(
-            socket.AF_INET, socket.SOCK_DGRAM)
+        self.ServerForClient_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.ServerForClient_Socket.bind((server_ip, server_port))
 
         # Socket Handling As Client For miner.py
-        self.ClientForMiner_Socket = socket.socket(
-            socket.AF_INET, socket.SOCK_DGRAM)
+        self.ClientForMiner_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.ClientForMiner_Socket.bind((client_ip, client_port))
 
         # Market Variables here
@@ -198,6 +196,9 @@ class Market:
                 )
 
                 #clear OrderBook of Buyer and Seller
+                self.Remove_From_OrderBook(current_TXN[0])      #Remove Buyer Entry in OrderBook
+                self.Remove_From_OrderBook(current_TXN[1])      #Remove Seller Entry in OrderBook
+
             else:
                 #Tell Buyer here that ur TXN cannot continue, not enough funds
                 pass
@@ -333,15 +334,6 @@ class Market:
         return False
     #EndFunction
     
-    #
-    def RunMarket(self):
-
-        #Main loop
-        while True:
-            pass
-        #EndWhile
-    #EndFunction
-
     #OK
     def Get_BlockChain_Size(self):
         return len(self.BlockChain)
@@ -380,7 +372,24 @@ class Market:
         self.Print_JSON_Object(self.BlockChain)
         print("BlockChain Size: {}".format(self.Get_BlockChain_Size()))
     #EndFunction
-# EndClass
+
+    def Handle_Incomming_Request_for_OrderBook(self):
+
+        incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(8192)
+        Data = incomming_UDP_Data[0].decode("utf-8")
+        print(Data)
+        
+    #EndFunction
+
+    #
+    def RunMarket(self):
+
+        #Main loop
+        while True:
+            pass
+        #EndWhile
+    #EndFunction
+#EndClass
 
 
 def main():
