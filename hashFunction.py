@@ -18,3 +18,11 @@ def encoded_hash_object(obj):
     return hash_object(obj).encode('utf-8')
 
 
+def getSHA(key, number):
+    stringS = hash_object(key)   
+    return (stringS[0:number])
+
+
+
+
+
