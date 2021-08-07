@@ -51,6 +51,8 @@ class Client:
         f = open("clients.json","a")
 
         (public_key_str,private_key_str) = hashFunction.rsa_genkey()
+        self.pubkey = public_key_str
+        self.privkey = private_key_str
 
         entry = {'username': username,'pubkey':public_key_str,'privkey':private_key_str ,'type':self.type ,'hashed_username':hashed_username}
 
@@ -68,11 +70,44 @@ class Client:
 
 
 # c1 = Client("Bob")
+
+def foo():
+    return 1
 while True:
     try:
         usrname = str(input("Enter username : "))
         c1 = Client(usrname)
-
+        
+        break
     except Exception as e:
-        print (e)
+        #print (e)
         print("Can't use this username : Already exist (Public key clash)")
+    
+
+
+while True:
+
+
+    # Menu
+    if (c1.type == "S"): # Seller
+        print("Commands\n\
+                1. View Current balance\n\
+                    2. Sell something\n\
+                        3. View Orderbook\n\
+                            4. Show public key\n\
+                                5. Show Private key\n")
+        temp = int(input())
+        if (temp == 1):
+            foo()
+        if (temp == 2):
+            
+        if (temp == 3):
+            foo()
+        if (temp == 4):
+            print(c1.pubkey)
+        if (temp == 5):
+            print(c1.privkey)
+
+
+def sell():
+    item = str(input("Item name : "))
