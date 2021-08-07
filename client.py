@@ -75,7 +75,7 @@ def foo():
 def sell():
     item = str(input("Item name : "))
     price = str(input("Price for selling : "))
-    data = {'item': item,'price':price , 'pubkey':c1.public_key_str,'type':c1.type}
+    data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type}
     data = str(data)
     data = data.encode("utf-8")
 
@@ -85,7 +85,7 @@ def sell():
 def buy():
     item = str(input("Item name : "))
     price = str(input("Price for buying : "))
-    data = {'item': item,'price':price , 'pubkey':c1.public_key_str,'type':c1.type}
+    data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type}
     data = str(data)
     data = data.encode("utf-8")
 
