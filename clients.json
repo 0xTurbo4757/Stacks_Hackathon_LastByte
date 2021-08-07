@@ -1,3 +1,1 @@
-{"username": "Alice", "hashed_username": "3bc51"}
-{"username": "Bob", "hashed_username": "cd9fb"}
-{"username": "many", "hashed_username": "1137b"}
+{"username": "Bob", "pubkey": "AAAAB3NzaC1yc2EAAAADAQABAAAAQQDvSkkHP4RaD+tsxiBRl3AT0eM9Gj3NEDB0PPkWdyp3zv8o+JHEGt/pdy0/DjJQrea6+0KZivPAqmPgjzV1OKaV", "privkey": "IIBOwIBAAJBAO9KSQc/hFoP62zGIFGXcBPR4z0aPc0QMHQ8+RZ3KnfO/yj4kcQa\n3+l3LT8OMlCt5rr7QpmK88CqY+CPNXU4ppUCAwEAAQJAP+3jxtj0Xi9koWHpXoMM\nAW+Qu1FYc4HAwD1N+u+JXApgJ0tioFv/6z5z6MDXXqqnO4Xj10sSlK2MCGcjt18T\nQQIhAPfPt1SbmfhpYbbQ+8BHI6FmIhmOM+ChcCFVl5Ay1krFAiEA9zJ8jsMVL9s5\n3eZvquBhq217o4Ws/WYUTtNEFSlP6ZECIQD1RTid3DhDnwHgsO1LfN2uJGlBw/Zi\nsUZLJ+0QAtEIRQIhANIkcDDo9LzvL/1M5UctYrpZ40562Dm+qqrr/KfEq/ORAiBk\n7siK0zfXUWCgrWzsDiWDF+BByIIc1+EwhjGkf7eH2Q=", "type": "S", "hashed_username": "cd9fb"}
