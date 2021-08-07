@@ -72,7 +72,18 @@ class Client:
 # c1 = Client("Bob")
 
 def foo():
-    return 1
+    return "NULL"
+
+def sell():
+    item = str(input("Item name : "))
+    price = str(input("Price for selling : "))
+def buy():
+    item = str(input("Item name : "))
+    price = str(input("Price for buying : "))
+
+
+
+
 while True:
     try:
         usrname = str(input("Enter username : "))
@@ -84,7 +95,6 @@ while True:
         print("Can't use this username : Already exist (Public key clash)")
     
 
-
 while True:
 
 
@@ -92,22 +102,44 @@ while True:
     if (c1.type == "S"): # Seller
         print("Commands\n\
                 1. View Current balance\n\
-                    2. Sell something\n\
-                        3. View Orderbook\n\
-                            4. Show public key\n\
-                                5. Show Private key\n")
+                2. Sell something\n\
+                3. View Orderbook\n\
+                4. Show public key\n\
+                5. Show Private key\n\
+                6. Clear Screen\n")
         temp = int(input())
         if (temp == 1):
-            foo()
+            print(foo())
         if (temp == 2):
-            
+            sell()
         if (temp == 3):
-            foo()
+            print(foo())
         if (temp == 4):
             print(c1.pubkey)
         if (temp == 5):
             print(c1.privkey)
+        if (temp == 6):
+            print("\n"*100)
 
+    if (c1.type == "B"): # Buyer
+        print("Commands\n\
+                1. View Current balance\n\
+                2. Buy something\n\
+                3. View Orderbook\n\
+                4. Show public key\n\
+                5. Show Private key\n\
+                6. Clear Screen\n")
+        temp = int(input())
+        if (temp == 1):
+            foo()
+        if (temp == 2):
+            buy()
+        if (temp == 3):
+            foo()
+        if (temp == 4):
+            print(c1.pubkey + "\n")
+        if (temp == 5):
+            print(c1.privkey+ "\n")
+        if (temp == 6):
+            print("\n"*100)
 
-def sell():
-    item = str(input("Item name : "))
