@@ -15,20 +15,12 @@ class Client:
 
         self.ClientForMarket_Socket.connect(("127.0.0.1", 2500))
 
-
-
-
-
-
-
         # Buyer or Seller
         self.type = ""
 
 
         # Hash the username
         hashed_username = hashFunction.getSHA(username,5)
-
-
 
 
         # # Check from Json file
@@ -51,7 +43,6 @@ class Client:
         
 
         self.type = temp
-
 
 
         
