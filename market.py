@@ -11,7 +11,8 @@ class Market:
 
         # Socket Handling As Client For miner.py
         self.ClientForMiner_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.ClientForMiner_Socket.bind((client_ip, client_port))
+        #self.ClientForMiner_Socket.bind((client_ip, client_port))
+        self.ClientForMiner_SocketAddr = (client_ip, client_port)
 
         # Market Variables here
         self.OrderBook = []  # has dictionaries at each index
@@ -208,6 +209,7 @@ class Market:
 
     #SOCKET
     def Request_Verified_TXN_by_Miner(self, TXN_Data):
+        #Generate Request for miner
         request_to_send_miner = str(TXN_Data[0])
         request_to_send_miner += ","
         request_to_send_miner += str(TXN_Data[1])
@@ -216,6 +218,12 @@ class Market:
 
         #Request MINER HERE : SOCKET
         print("Requested Miner '{}'".format(request_to_send_miner))
+        self.Send_Data_to_Miner(request_to_send_miner, self.ClientForMiner_SocketAddr)
+    #EndFunction
+
+    #
+    def Send_Data_to_Miner(self, data_to_send, miner_addr):
+        self.ClientForMiner_Socket.sendto(data_to_send.encode("utf-8"), miner_addr)
     #EndFunction
 
     #OK
@@ -313,7 +321,8 @@ class Market:
         self.ExistingMerchantList.append(
             {
                 "m_pkey" : merchant_public_key,
-                "m_nAddr" : merchant_network_addr
+                "m_nIP" : merchant_network_addr[0]
+                "m_nPort" : merchant_network_addr[1]
             }
         )
     #EndFunction
@@ -333,13 +342,44 @@ class Market:
         #Did not find merchant in list
         return False
     #EndFunction
-    
+
     #OK
     def Get_BlockChain_Size(self):
         return len(self.BlockChain)
     #EndFunction
 
-    #OK
+    #
+    def Update_Current_BlockChain(self, new_block_chain):
+        self.BlockChain = new_block_chain
+    #EndFunction
+
+    def Handle_Incoming_OrderBook_Requests(self):
+
+        print("Listening for Client Request")
+        while True:
+            try:
+                incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(8192)
+                Data = incomming_UDP_Data[0].decode("utf-8")
+                if (len(Data)):
+                    print("Data: {}".format(Data))
+                    print("Addr: {}".format(incomming_UDP_Data[1]))
+                #EndIf
+            except (KeyboardInterrupt, SystemExit):
+                exit()
+            #EndTry
+        #EndWhile
+    #EndFunction
+
+    def Handle_Incoming_BlockChain_from_Miner_THREADED(self):
+        while True:
+            incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(8192)
+            BlockChain_Data_RAW = incomming_UDP_Data[0].decode("utf-8")
+            Updated_BlockChain = json.loads(BlockChain_Data_RAW)
+            self.Update_Current_BlockChain(Updated_BlockChain)
+        #EndWhile
+    #EndFunction
+
+        #OK
     def Print_OrderBook(self):
 
         if (len(self.OrderBook) == 0):
@@ -373,16 +413,8 @@ class Market:
         print("BlockChain Size: {}".format(self.Get_BlockChain_Size()))
     #EndFunction
 
-    def Handle_Incomming_Request_for_OrderBook(self):
-
-        incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(8192)
-        Data = incomming_UDP_Data[0].decode("utf-8")
-        print(Data)
-        
-    #EndFunction
-
     #
-    def RunMarket(self):
+    def RunMarket(self):    
 
         #Main loop
         while True:
@@ -390,7 +422,6 @@ class Market:
         #EndWhile
     #EndFunction
 #EndClass
-
 
 def main():
     ip = "localhost"
@@ -407,9 +438,9 @@ def main():
     #market.Get_All_Potential_TXN_in_OrderBook()
     #print("P Key: {}".format(market.Get_Index_of_merchant_in_OrderBook(1)))
     #print(market.Extract_Data_from_BlockChain_BlockData("56841536845368435684359865,958451856958698546982,500"))
-    market.Print_BlockChain()
+    #market.Print_BlockChain()
     #print(market.Get_Merchant_Current_Balance("1"))
-    market.Handle_All_Potential_TXNs_within_OrderBook()
+    market.Handle_Incoming_Request_for_OrderBook()
 # EndMain
 
 if __name__ == "__main__":
