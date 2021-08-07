@@ -18,7 +18,7 @@ class Market:
         # Market Variables here
         self.OrderBook = []  # has dictionaries at each index
 
-        self.TEST_BLOCK_CHAIN_TESTING_ONLY = '{"1":{"PreviousHash":"0x000000000000","Data":"1,2,5","Nonce":"852946123"},"2":{"PreviousHash":"0x004433221100","Data":"2,3,2","Nonce":"681861688"},"3":{"PreviousHash":"0x006516138131","Data":"3,4,6","Nonce":"694206900"},"4":{"PreviousHash":"0x006861831815","Data":"4,1,3","Nonce":"616840233"}}'
+        self.TEST_BLOCK_CHAIN_TESTING_ONLY = '{"1":{"PreviousHash":"0x000000000000","Data":"0,1,100","Nonce":"852946123"},"2":{"PreviousHash":"0x000000000000","Data":"0,2,100","Nonce":"852946123"},"3":{"PreviousHash":"0x000000000000","Data":"0,3,100","Nonce":"852946123"},"4":{"PreviousHash":"0x000000000000","Data":"0,4,100","Nonce":"852946123"},"5":{"PreviousHash":"0x004433221100","Data":"1,2,12","Nonce":"681861688"},"6":{"PreviousHash":"0x006861831815","Data":"2,3,9","Nonce":"616840233"},"7":{"PreviousHash":"0x006516138131","Data":"3,4,8","Nonce":"694206900"},"8":{"PreviousHash":"0x006516138131","Data":"4,1,8","Nonce":"694206900"},"9":{"PreviousHash":"0x006516138131","Data":"2,4,5","Nonce":"694206900"}}'
         self.BlockChain = []
 
         #Testing ONLY
@@ -138,22 +138,119 @@ class Market:
 
     # Iterates through Blockchain to get latest Balance of the merchant
     def Get_Merchant_Current_Balance(self, merchant_public_key):
-        pass
+
+        balance_given_to_merchant = 0
+        balance_taken_from_merchant = 0
+        net_merchant_balance = 0
+        
+        #Iterate thru entire chain for balance given to merchant
+        for current_block_iterator in range(1, (self.Get_BlockChain_Size() + 1)):
+
+            #Get Current Block as JSON obj
+            current_block = self.BlockChain[str(current_block_iterator)]
+
+            #Extract Data out of current block
+            sender_key,receiver_key,amount_transfered = self.Extract_Data_from_BlockChain_BlockData(current_block["Data"])
+
+            #If Merchant Recieved Funds
+            if (receiver_key == merchant_public_key):
+                print("Merchant {} received {} from {}".format(receiver_key, amount_transfered, sender_key))
+                balance_given_to_merchant += int(amount_transfered)
+            #EndIf
+        #EndFor
+
+        #Iterate thru entire chain for balance taken from merchant
+        for current_block_iterator in range(1, (self.Get_BlockChain_Size() + 1)):
+
+            #Get Current Block as JSON obj
+            current_block = self.BlockChain[str(current_block_iterator)]
+
+            #Extract Data out of current block
+            sender_key,receiver_key,amount_transfered = self.Extract_Data_from_BlockChain_BlockData(current_block["Data"])
+
+            #If Merchant Sent Funds
+            if (sender_key == merchant_public_key):
+                print("Merchant {} Sent {} from {}".format(sender_key, amount_transfered, receiver_key))
+                balance_taken_from_merchant += int(amount_transfered)
+            #EndIf
+        #EndFor
+
+        #Calculate Net Merchant Balance
+        net_merchant_balance = (balance_given_to_merchant - balance_taken_from_merchant)
+
+        #Return net balance
+        return net_merchant_balance
     # EndFunction
 
     #Send OrderBook to the Merchant requesting it
     def Send_OrderBook_to_Merchant(self, merchant_public_key):
         pass
     #EndFunction
-
-    def Add_Merchant_to_Existing_List(self, merchant_public_key, merchant_)
     
+    def Extract_Data_from_BlockChain_BlockData(self, target_block_data):
+        sender_addr = ""
+        receiver_addr = ""
+        ammount_transfered = ""
+        commas = 0
+
+        for current_char in target_block_data:
+            if (current_char == ','):
+                commas += 1
+                continue
+            #EndIf
+
+            if (commas == 0):
+                sender_addr += current_char
+            #EndIf
+
+            if (commas == 1):
+                receiver_addr += current_char
+            #EndIf
+
+            if (commas == 2):
+                ammount_transfered += current_char
+            #EndIf
+        #EndFor
+
+        #Return Extracted Data as tuple
+        return ((sender_addr, receiver_addr, ammount_transfered))
+    #EndFunction
+
+    def Add_Merchant_to_Existing_List(self, merchant_public_key, merchant_network_addr):
+
+        self.ExistingMerchantList.append(
+            {
+                "m_pkey" : merchant_public_key,
+                "m_nAddr" : merchant_network_addr
+            }
+        )
+    #EndFunction
+
+    def Check_if_Merchant_Exists_in_Existing_List(self, merchant_public_key):
+
+        for current_merchant in self.ExistingMerchantList:
+
+            if (current_merchant["m_pkey"] == merchant_public_key):
+
+                #Merchant found
+                return True
+            #EndIf
+        #EndFor
+
+        #Did not find merchant in list
+        return False
+    #EndFunction
+
     def RunMarket(self):
 
         #Main loop
         while True:
             pass
         #EndWhile
+    #EndFunction
+    
+    def Get_BlockChain_Size(self):
+        return len(self.BlockChain)
     #EndFunction
 
     #OK
@@ -176,14 +273,18 @@ class Market:
         # EndFor
     #EndFunction
 
-    #OK
-    def Print_BlockChain(self):
-
+    def Print_JSON_Object(self, target_object):
         print('\n', end='')
 
-        print(json.dumps(self.BlockChain, indent=4, sort_keys=True))
+        print(json.dumps(target_object, indent=4, sort_keys=True))
         
         print('\n', end='')
+    #EndFunction
+
+    #OK
+    def Print_BlockChain(self):
+        self.Print_JSON_Object(self.BlockChain)
+        print("BlockChain Size: {}".format(len(self.BlockChain)))
     #EndFunction
 # EndClass
 
@@ -202,8 +303,9 @@ def main():
     #print("\n---------------------------")
     #market.Get_All_Potential_TXN_in_OrderBook()
     #print("P Key: {}".format(market.Get_Index_of_merchant_in_OrderBook(1)))
-
+    #print(market.Extract_Data_from_BlockChain_BlockData("56841536845368435684359865,958451856958698546982,500"))
     market.Print_BlockChain()
+    print(market.Get_Merchant_Current_Balance("1"))
 # EndMain
 
 
