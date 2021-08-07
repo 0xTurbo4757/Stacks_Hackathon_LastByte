@@ -9,11 +9,9 @@ class Client:
 
     def __init__(self,username):
         #Socket Handeling
-        self.ClientForMarket_Socket = socket.socket(
-            socket.AF_INET, socket.SOCK_DGRAM)
-        self.ClientForMarket_Socket.bind(("127.0.0.1", 2600))
-
-        self.ClientForMarket_Socket.connect(("127.0.0.1", 2500))
+        self.ClientForMarket_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        #self.ClientForMarket_Socket.bind(("localhost", 2600))
+        self.ClientForMarket_Socket.connect(("127.0.0.1", 2600))
 
         # Buyer or Seller
         self.type = ""
@@ -104,7 +102,7 @@ while True:
         
         break
     except Exception as e:
-        #print (e)
+        print (e)
         print("Can't use this username : Already exist (Public key clash)")
     
 
