@@ -23,3 +23,18 @@ Market.py: This maintains the order book and constantly performs read and write 
 
 Miner.py: The miner receives a transaction request for the market and forms a block with the received data. The block is then mined using the proof of work algorithm to find a suitable nonce for the BlockHash. Once the block is mined, it is added to the Blockchain and broadcasted to all the nodes.
 
+
+## How To Run
+    You can run multiple clients as buyer or seller. Use only one miner and market instance. The client can request to either sell or buy an item from the market, this will all be saved in a JSON order book. The market finds matches for buyers and sellers and sends transcation request to the miner which in turn mines the block and add it to the blockchain.
+
+## Features
+    Decentralized Ledgers.
+    Mineable blocks.
+    Intial balance Distributed.
+    RSA to sign transcation.
+    Unique public key used as an Identifier for both blockchain and market.
+
+
+## Known bugs:
+    Client is unable to recieve the orderbook from market however all transcation will go through.
+    Client holds the latest version of ledger but the function to display current balance is not implemented.
