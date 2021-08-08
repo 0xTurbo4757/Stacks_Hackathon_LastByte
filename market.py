@@ -323,8 +323,8 @@ class Market:
     #EndFunction
 
     #SOCKET
-    def Send_Data_to_Miner(self, data_to_send, miner_addr):
-        self.ClientForMiner_Socket.sendto(data_to_send.encode(Market.DATA_ENCODING_FORMAT), miner_addr)
+    def Send_Data_to_Miner(self, data_to_send):
+        self.ClientForMiner_Socket.sendto(data_to_send.encode(Market.DATA_ENCODING_FORMAT), self.ClientForMiner_SocketAddr)
     #EndFunction
 
     #SOCKET
@@ -366,12 +366,12 @@ class Market:
 
         #Request MINER HERE : SOCKET
         print("Requested Miner '{}'".format(request_to_send_miner))
-        self.Send_Data_to_Miner(request_to_send_miner, self.ClientForMiner_SocketAddr)
+        self.Send_Data_to_Miner(request_to_send_miner)
     #EndFunction
 
     #SOCKET
-    def Request_Latest_BlockChain_from_Miner(self, miner_addr):
-        self.Send_Data_to_Miner(Market.MINER_BLOCKCHAIN_REQUEST_STR, miner_addr)
+    def Request_Latest_BlockChain_from_Miner(self):
+        self.Send_Data_to_Miner(Market.MINER_BLOCKCHAIN_REQUEST_STR)
     #EndFunction
     # ----------------------------- SOCKET -----------------------------
 
@@ -561,6 +561,10 @@ class Market:
             #Sends TXN request to miner
             #Then Removes Buyer & Seller entry in OrderBook
             self.Handle_All_Potential_TXNs_within_OrderBook()
+
+            #Request Miner To Send Latest BlockChain
+            #Received BlockChain asynchronously updated using threads
+            self.Request_Latest_BlockChain_from_Miner()
 
         #EndWhile
     #EndFunction
