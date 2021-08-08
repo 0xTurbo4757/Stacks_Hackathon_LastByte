@@ -1,6 +1,7 @@
 # Market Code Here
 import socket
 import json
+from threading import Thread
 
 class Market:
     #Constants
@@ -28,7 +29,7 @@ class Market:
 
         # Socket Handling As Client For miner.py
         self.ClientForMiner_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        #self.ClientForMiner_Socket.bind((client_ip, client_port))
+        self.ClientForMiner_Socket.connect((client_ip, client_port))
         self.ClientForMiner_SocketAddr = (client_ip, client_port)
 
         # Market Variables here
@@ -443,8 +444,8 @@ class Market:
         print("Listening for Client Request")
         Data, Client_Address = self.Get_Data_from_Merchant()
         if (len(Data)):
-            print("Received Data: {}".format(Data))
-            print("From Addr    : {}".format(Client_Address))
+            print("\n\nReceived Data: {}".format(Data))
+            print("From Addr    : {}\n".format(Client_Address))
 
             #If Merchant Expects Latest OrderBook, send it to them
             if (Data == Market.CLIENT_ORDERBOOK_REQUEST_STR):
@@ -453,6 +454,8 @@ class Market:
 
                 #We have received request to add something to orderbook
                 Merchant_OrderBook_Add_JSON = json.loads(json.dumps(Data))
+
+                print("\n\nData: {}\n\n".format(Merchant_OrderBook_Add_JSON))
 
                 #if Merchant doesnt Exists in ListOfUniqueMerchants
                 if (not(self.Check_if_Merchant_Exists_in_ExistingMerchant_List(Merchant_OrderBook_Add_JSON["pubkey"]))):
@@ -574,21 +577,31 @@ class Market:
 def main():
     ip = "localhost"
     server_port = 2600
-    client_port = 2501
+    client_port = 2500
     market = Market(ip, server_port, ip, client_port)
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
+    
+    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
+    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
+    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
+    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
     #market.Print_OrderBook()
     #market.Remove_From_OrderBook(4)
     #print("\n---------------------------")
     #market.Get_All_Potential_TXN_in_OrderBook()
     #print("P Key: {}".format(market.Get_Index_of_merchant_in_OrderBook(1)))
     #print(market.Extract_Data_from_BlockChain_BlockData("56841536845368435684359865,958451856958698546982,500"))
-    market.Print_BlockChain()
+    #market.Print_BlockChain()
     #print(market.Get_Merchant_Current_Balance("1"))
     #market.Handle_Incoming_Request_for_OrderBook()
+    
+    #Threading For BlockChain Update
+    Market_BlockChain_Update_THREAD = Thread(target=market.Handle_Incoming_BlockChain_from_Miner_THREADED)
+    Market_BlockChain_Update_THREAD.daemon = True
+    Market_BlockChain_Update_THREAD.start()
+
+    #Run The market
+    market.RunMarket()
+    #market.Send_Data_to_Miner("HELLO MINER!")
 # EndMain
 
 if __name__ == "__main__":
