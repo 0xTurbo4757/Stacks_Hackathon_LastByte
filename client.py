@@ -11,7 +11,7 @@ class Client:
     def __init__(self,username):
         #Socket Handeling
         self.ClientForMarket_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.ClientForMarket_Socket.bind(("localhost", 2500))
+        self.ClientForMarket_Socket.bind(("localhost", 1234))
         self.ClientForMarket_Socket.connect(("127.0.0.1", 2600))
 
 
@@ -55,7 +55,7 @@ class Client:
         self.privkey = private_key_str
         self.pubkeyf = self.pem.public_key()
 
-        entry = {'username': username,'pubkey':public_key_str,'privkey':private_key_str ,'type':self.type ,'hashed_username':hashed_username}
+        entry = {"username": username,"pubkey":public_key_str,"privkey":private_key_str ,"type":self.type ,"hashed_username":hashed_username}
 
         
         json.dump (entry,f)
@@ -66,8 +66,13 @@ class Client:
 
 
 
-    def main(self):
-        print()
+    def send_to_server(self,data):
+        self.ClientForMarket_Socket.sendto(data, ("localhost", 2600))
+    def recv(self):
+            incomming_UDP_Data = c1.ClientForMarket_Socket.recvfrom(1024)
+            data = incomming_UDP_Data[0].decode("utf-8")
+            return data
+
 
 
 # c1 = Client("Bob")
@@ -91,12 +96,12 @@ def sell():
         print("Cannot Verify")
 
     ##########################################
-    data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type}
+    data = {"item": item,"price":price , "pubkey":c1.pubkey,"type":c1.type}
     data = str(data)
     data = data.encode("utf-8")
 
 
-    self.ClientForMarket_Socket.sendto(data, ("localhost", 2600))
+    c1.send_to_server(data)
 
 def buy():
     item = str(input("Item name : "))
@@ -116,7 +121,7 @@ def buy():
     ##########################################
 
 
-    data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type}
+    data = {"item": item,"price":price , "pubkey":c1.pubkey,"type":c1.type}
     data = str(data)
     print(data)
 
@@ -124,16 +129,15 @@ def buy():
     data = data.encode("utf-8")
 
     
-    self.ClientForMarket_Socket.sendto(data, ("localhost", 2600))
+    
+
 
 def view_orderbook():
     data = "order"
     data= data.encode("utf-8")
-    c1.ClientForMarket_Socket.sendall(data)
-    #c1.ClientForMarket_Socket.listen(5)
-    incomming_UDP_Data = c1.ClientForMarket_Socket.recvfrom(1024)
-    data = incomming_UDP_Data[0].decode("utf-8")
-    print(data)
+
+    c1.send_to_server(data)
+    data = c1.recv()
         
 
 
