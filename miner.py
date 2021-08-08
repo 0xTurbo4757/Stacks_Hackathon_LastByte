@@ -36,11 +36,6 @@ else:
                 }
     }
 
-
-
-
-
-
 # MINING THE BLOCK
 currentBlockHash = hashFunction.hash_object(blockdata)
 # blocknumber = blocknumber + 1
@@ -73,7 +68,6 @@ with open("BlockChain.json", "r+") as file:
     file.seek(0)
     
     json.dump(data, file, indent = 4)
-
 
 blocknumber = blocknumber + 1
 
