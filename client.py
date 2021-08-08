@@ -68,21 +68,23 @@ class Client:
     def send_to_server(self,data):
         self.ClientForMarket_Socket.sendto(str(data).encode("utf-8"), ("localhost",2600))
 
-    def recv(self):
-
-        incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
-        Data = incomming_UDP_Data[0].decode("utf-8")
-        Client_Address = incomming_UDP_Data[1]
-
-        if (len(Data)):
-            return Data
+    #SOCKET
+    def Get_Data_from_Miner(self):
+        try:
+            incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
+            Data = incomming_UDP_Data[0].decode(Client.DATA_ENCODING_FORMAT)
+            return ((Data, incomming_UDP_Data[1]))
+        except:
+            return ("", "")
+        #EndTry
+    #EndFunction
 
     def view_orderbook(self):
         data = "order"
         c1.send_to_server(data)
-        data = self.recv()
-
-
+        data,addr = self.Get_Data_from_Miner()
+        print("OrderBook: \n{}\n".format(data))
+    #End
 
 # c1 = Client("Bob")
 
