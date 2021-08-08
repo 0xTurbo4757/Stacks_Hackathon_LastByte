@@ -77,6 +77,13 @@ class Client:
         if (len(Data)):
             return Data
 
+    def view_orderbook(self):
+        data = "order"
+        data= data.encode("utf-8")
+
+        c1.send_to_server(data)
+        data = self.recv()
+
 
 
 # c1 = Client("Bob")
@@ -134,12 +141,7 @@ def buy():
     
 
 
-def view_orderbook():
-    data = "order"
-    data= data.encode("utf-8")
 
-    c1.send_to_server(data)
-    data = c1.recv()
         
 
 
@@ -176,7 +178,7 @@ while True:
         if (temp == 2):
             sell()
         if (temp == 3):
-            print(foo())
+            c1.view_orderbook()
         if (temp == 4):
             print(c1.pubkey)
         if (temp == 5):
@@ -201,7 +203,7 @@ while True:
         if (temp == 2):
             buy()
         if (temp == 3):
-            view_orderbook()
+            c1.view_orderbook()
         if (temp == 4):
             print(c1.pubkey + "\n")
         if (temp == 5):
