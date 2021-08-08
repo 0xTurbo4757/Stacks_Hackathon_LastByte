@@ -96,7 +96,7 @@ def sell():
     data = data.encode("utf-8")
 
 
-    c1.ClientForMarket_Socket.sendall(data)
+    self.ClientForMarket_Socket.sendto(data, ("localhost", 2600))
 
 def buy():
     item = str(input("Item name : "))
@@ -124,7 +124,7 @@ def buy():
     data = data.encode("utf-8")
 
     
-    c1.ClientForMarket_Socket.sendall(data)
+    self.ClientForMarket_Socket.sendto(data, ("localhost", 2600))
 
 def view_orderbook():
     data = "order"
