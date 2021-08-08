@@ -11,7 +11,7 @@ class Client:
     def __init__(self,username):
         #Socket Handeling
         self.ClientForMarket_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.ClientForMarket_Socket.bind(("localhost", 2500))
+        #self.ClientForMarket_Socket.bind(("localhost", 2500))
         self.ClientForMarket_Socket.connect(("127.0.0.1", 2600))
 
 
