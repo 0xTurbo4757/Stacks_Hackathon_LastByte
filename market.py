@@ -26,6 +26,7 @@ class Market:
         # Socket Handling As Server For client.py
         self.ServerForClient_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.ServerForClient_Socket.bind((server_ip, server_port))
+        self.ServerForClient_Socket.settimeout(3.0)
 
         # Socket Handling As Client For miner.py
         self.ClientForMiner_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -311,16 +312,24 @@ class Market:
 
     #SOCKET
     def Get_Data_from_Merchant(self):
-        incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(Market.UDP_DATA_BUFFER_SIZE)
-        Data = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
-        return ((Data, incomming_UDP_Data[0]))
+        try:
+            incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(Market.UDP_DATA_BUFFER_SIZE)
+            Data = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
+            return ((Data, incomming_UDP_Data[0]))
+        except:
+            return ("", "")
+        #EndTry
     #EndFunction
 
     #SOCKET
     def Get_Data_from_Miner(self):
-        incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(Market.UDP_DATA_BUFFER_SIZE)
-        Data = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
-        return ((Data, incomming_UDP_Data[0]))
+        try:
+            incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(Market.UDP_DATA_BUFFER_SIZE)
+            Data = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
+            return ((Data, incomming_UDP_Data[0]))
+        except:
+            return ("", "")
+        #EndTry
     #EndFunction
 
     #SOCKET
@@ -501,8 +510,11 @@ class Market:
     def Handle_Incoming_BlockChain_from_Miner_THREADED(self):
         while True:
             BlockChain_Data_RAW, Miner_Address = self.Get_Data_from_Miner()
-            Updated_BlockChain = json.loads(BlockChain_Data_RAW)
-            self.Update_Current_BlockChain(Updated_BlockChain)
+            if (len(BlockChain_Data_RAW)):
+                print("Received BlockChain {}".format(BlockChain_Data_RAW))
+                Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
+                self.Update_Current_BlockChain(Updated_BlockChain)
+            #EndIf
         #EndWhile
     #EndFunction
     # ----------------------------- HANDLERS -----------------------------
@@ -569,6 +581,14 @@ class Market:
             #Request Miner To Send Latest BlockChain
             #Received BlockChain asynchronously updated using threads
             self.Request_Latest_BlockChain_from_Miner()
+
+            self.Request_Miner_to_Add_TXN_to_BlockChain(
+                (
+                    0,
+                    1,
+                    50
+                )
+            )
 
         #EndWhile
     #EndFunction

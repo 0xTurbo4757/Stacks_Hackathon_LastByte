@@ -26,7 +26,6 @@ class Miner:
     def Update_BlockChain(self):
         # LOOP!
         # "PKEY,PKEY,PRICE"
-        self.transactionSarib = "Sender2,Reciever2,Price2"
 
         # Creating A Block
         testNonce = 0
@@ -97,10 +96,10 @@ class Miner:
         Client_Address = incomming_UDP_Data[1]
 
         if (len(Data)):
-            print("\n\nReceived Data: {}\n\n".format(Data))
+            print("\nReceived Data: {}".format(Data))
             #If Client Expects Latest BlockChain, send it to them
             if (Data == Miner.MINER_BLOCKCHAIN_REQUEST_STR):
-                self.ServerForClient_Socket.sendto(self.blockdata.encode(Miner.DATA_ENCODING_FORMAT), Client_Address)
+                self.ServerForClient_Socket.sendto(str(self.blockdata).encode(Miner.DATA_ENCODING_FORMAT), Client_Address)
             #Market sent TXN Request
             elif (Data[0:3] == "TXN"):
                 #Save Market_Addr

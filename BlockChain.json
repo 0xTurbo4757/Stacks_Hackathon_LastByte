@@ -5,10 +5,11 @@
         "Nonce: ": 29,
         "CoinBase: ": "Initially 1000 coins alloted to clients"
     },
-    "1": {
-        "Previous Hash: ": "00000000",
+    "2": {
+        "Previous Hash: ": "0088602a14fa06b64516a7a3e0c39825644316dc6edf2ce3af5b361cf4cceaaf",
         "Data: ": "Sender2,Reciever2,Price2",
-        "Nonce: ": 29,
-        "CoinBase: ": "Initially 1000 coins alloted to clients"
+        "Nonce: ": 96
+    }
+}
     }
 }
