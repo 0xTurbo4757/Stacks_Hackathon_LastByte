@@ -107,10 +107,7 @@ def sell():
         print("Cannot Verify")
 
     ##########################################
-    data = '{"item":' +item+',"price":'+price+' , "pubkey":'+c1.pubkey+',"type":'+c1.type+'}'
-
-    data = data.encode("utf-8")
-
+    data = '{"item":' +item+',"price":'+price+',"pubkey":'+c1.pubkey+',"type":'+c1.type+'}'
 
     c1.send_to_server(data)
 
@@ -133,9 +130,6 @@ def buy():
 
 
     data = '{"item":' +item+',"price":'+price+' , "pubkey":'+c1.pubkey+',"type":'+c1.type+'}'
-
-    data = data.encode("utf-8")
-
     c1.send_to_server(data)
     
 

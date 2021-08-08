@@ -465,8 +465,8 @@ class Market:
             else:
 
                 #We have received request to add something to orderbook
-                print("json 1: {} t: {}".format(Data, type(Data)))
-                print("json 2: {} t: {}".format(json.loads(Data), type(json.loads(Data))))
+                #print("json 1: {} t: {}".format(Data, type(Data)))
+                #print("json 2: {} t: {}".format(json.loads(json.dumps(Data)), type(json.loads(Data))))
                 #print("json 3: {} t: {}".format(json.loads(json.dumps(Data)), type(json.loads(json.dumps(Data)))))
                 
                 Merchant_OrderBook_Add_JSON = json.loads(Data)
