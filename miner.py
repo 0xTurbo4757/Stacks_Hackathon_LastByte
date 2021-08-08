@@ -77,7 +77,7 @@ class Miner:
         # Serializing json
         json_object = json.dumps(self.blockdata, indent=4)
         # Writing to sample.json
-        with open("BlockChain.json", "r+") as file:
+        with open("BlockChain.json", "a+") as file:
             data = json.load(file)
             # Appending to the BlockChain
             data.update(self.blockdata)
