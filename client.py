@@ -5,11 +5,15 @@ import hashFunction
 import socket
 import json
 import random
+from threading import Thread
 
 class Client:
     UDP_DATA_BUFFER_SIZE = 8192
+    DATA_ENCODING_FORMAT = "utf-8"
 
     def __init__(self,username):
+        self.BlockChain = []
+
         #Socket Handeling
         self.ClientForMarket_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         #self.ClientForMarket_Socket.bind(("localhost", 1234))
@@ -62,29 +66,129 @@ class Client:
         f.close()
 
 
-
-
-
     def send_to_server(self,data):
         self.ClientForMarket_Socket.sendto(str(data).encode("utf-8"), ("localhost",2600))
 
     def recv(self):
-
-        incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
-        Data = incomming_UDP_Data[0].decode("utf-8")
-        Client_Address = incomming_UDP_Data[1]
-
-        if (len(Data)):
-            return Data
+        try:
+            incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
+            Data = incomming_UDP_Data[0].decode(Client.DATA_ENCODING_FORMAT)
+            return ((Data, incomming_UDP_Data[1]))
+        except:
+            return ("", "")
+        #EndTry
 
     def view_orderbook(self):
         data = "order"
-        data= data.encode("utf-8")
+        self.send_to_server(data)
+        data,addr = self.recv()
+        print("OrderBook: \n{}".format(data))
 
-        c1.send_to_server(data)
-        data = self.recv()
+    #SOCKET
+    def Get_Data_from_Miner(self):
+        try:
+            incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
+            Data = incomming_UDP_Data[0].decode(Client.DATA_ENCODING_FORMAT)
+            return ((Data, incomming_UDP_Data[1]))
+        except:
+            return ("", "")
+        #EndTry
+    #EndFunction
 
+    #OK
+    def Get_BlockChain_Size(self):
+        return len(self.BlockChain)
+    #EndFunction
 
+     #OK
+    def Extract_Data_from_BlockChain_BlockData(self, target_block_data):
+        sender_addr = ""
+        receiver_addr = ""
+        ammount_transfered = ""
+        commas = 0
+
+        for current_char in target_block_data:
+            if (current_char == ','):
+                commas += 1
+                continue
+            #EndIf
+
+            if (commas == 0):
+                sender_addr += current_char
+            #EndIf
+
+            if (commas == 1):
+                receiver_addr += current_char
+            #EndIf
+
+            if (commas == 2):
+                ammount_transfered += current_char
+            #EndIf
+        #EndFor
+
+        #Return Extracted Data as tuple
+        return ((sender_addr, receiver_addr, ammount_transfered))
+    #EndFunction
+
+     #OK
+    # Iterates through Blockchain to get latest Balance of the merchant
+    def Get_Merchant_Current_Balance(self, merchant_public_key):
+
+        balance_given_to_merchant = 0
+        balance_taken_from_merchant = 0
+        net_merchant_balance = 0
+        
+        #Iterate thru entire chain for balance given to merchant
+        for current_block_iterator in range(1, (self.Get_BlockChain_Size() + 1)):
+
+            #Get Current Block as JSON obj
+            current_block = self.BlockChain[str(current_block_iterator)]
+
+            #Extract Data out of current block
+            sender_key,receiver_key,amount_transfered = self.Extract_Data_from_BlockChain_BlockData(current_block["Data"])
+
+            #If Merchant Recieved Funds
+            if (receiver_key == merchant_public_key):
+                print("Merchant {} received {} from {}".format(receiver_key, amount_transfered, sender_key))
+                balance_given_to_merchant += int(amount_transfered)
+            #EndIf
+        #EndFor
+
+        #Iterate thru entire chain for balance taken from merchant
+        for current_block_iterator in range(1, (self.Get_BlockChain_Size() + 1)):
+
+            #Get Current Block as JSON obj
+            current_block = self.BlockChain[str(current_block_iterator)]
+
+            #Extract Data out of current block
+            sender_key,receiver_key,amount_transfered = self.Extract_Data_from_BlockChain_BlockData(current_block["Data"])
+
+            #If Merchant Sent Funds
+            if (sender_key == merchant_public_key):
+                print("Merchant {} Sent {} from {}".format(sender_key, amount_transfered, receiver_key))
+                balance_taken_from_merchant += int(amount_transfered)
+            #EndIf
+        #EndFor
+
+        #Calculate Net Merchant Balance
+        net_merchant_balance = (balance_given_to_merchant - balance_taken_from_merchant)
+
+        #Return net balance
+        return net_merchant_balance
+    # EndFunction
+
+    def Handle_Incoming_BlockChain_from_Miner_THREADED(self):
+        while True:
+            BlockChain_Data_RAW, Miner_Address = self.Get_Data_from_Miner()
+            if (len(BlockChain_Data_RAW)):
+                #print("Received BlockChain {}".format(BlockChain_Data_RAW))
+                Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
+                print("Received BlockChain:\n")
+                #self.Print_JSON_Object(Updated_BlockChain)
+                self.BlockChain = Updated_BlockChain
+            #EndIf
+        #EndWhile
+    #EndFunction
 
 # c1 = Client("Bob")
 
@@ -107,11 +211,8 @@ def sell():
         print("Cannot Verify")
 
     ##########################################
-    data = {"item": item,"price":price , "pubkey":c1.pubkey,"type":c1.type}
+    data = {"item": item,"price":price ,"pubkey":c1.pubkey,"type":c1.type}
     data = str(data)
-    data = data.encode("utf-8")
-
-
     c1.send_to_server(data)
 
 def buy():
@@ -133,18 +234,9 @@ def buy():
 
 
     data = {"item": item,"price":price , "pubkey":c1.pubkey,"type":c1.type}
-    data = str(data)
-
-    data = data.encode("utf-8")
-
+    data = str(data)    
     c1.send_to_server(data)
     
-
-
-
-        
-
-
 
 while True:
     try:
@@ -157,8 +249,12 @@ while True:
         print("Can't use this username : Already exist (Public key clash)")
     
 
-while True:
 
+Client_BlockChain_Update_THREAD = Thread(target=c1.Handle_Incoming_BlockChain_from_Miner_THREADED)
+Client_BlockChain_Update_THREAD.daemon = True
+Client_BlockChain_Update_THREAD.start()
+
+while True:
 
     # Menu
     if (c1.type == "S"): # Seller
