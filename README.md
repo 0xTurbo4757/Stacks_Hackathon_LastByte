@@ -25,7 +25,7 @@ Miner.py: The miner receives a transaction request for the market and forms a bl
 
 
 ## How To Run
-    You can run multiple clients as buyer or seller. Use only one miner and market instance. The client can request to either sell or buy an item from the market, this will all be saved in a JSON order book. The market finds matches for buyers and sellers and sends transcation request to the miner which in turn mines the block and add it to the blockchain.
+You can run multiple clients as buyer or seller. Use only one miner and market instance. The client can request to either sell or buy an item from the market, this will all be saved in a JSON order book. The market finds matches for buyers and sellers and sends transcation request to the miner which in turn mines the block and add it to the blockchain.
 
 ## Features
     Decentralized Ledgers.
@@ -36,5 +36,5 @@ Miner.py: The miner receives a transaction request for the market and forms a bl
 
 
 ## Known bugs:
-    Client is unable to recieve the orderbook from market however all transcation will go through.
-    Client holds the latest version of ledger but the function to display current balance is not implemented.
+•	Client is unable to recieve the orderbook from market however all transcation will go through.
+•	Client holds the latest version of ledger but the function to display current balance is not implemented.
