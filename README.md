@@ -2,6 +2,7 @@
 ByteMarket is a blockchain based decentralized exchange for buying & selling goods. ByteMarket adopts a unique order-book set up which allows buyers & sellers to place bid and ask prices using a price-priority algorithm to trade the goods.
 ## Requirements
 Your machine should have the latest version of python3 installed for proper working.
+
 ## Running the Application
 pip install cryptography
 
