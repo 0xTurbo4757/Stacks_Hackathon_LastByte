@@ -37,4 +37,5 @@ You can run multiple clients as buyer or seller. Use only one miner and market i
 
 ## Known bugs:
 •	Client is unable to recieve the orderbook from market however all transcation will go through.
+
 •	Client holds the latest version of ledger but the function to display current balance is not implemented.
