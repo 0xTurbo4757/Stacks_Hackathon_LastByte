@@ -11,7 +11,7 @@ class Client:
     def __init__(self,username):
         #Socket Handeling
         self.ClientForMarket_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        #self.ClientForMarket_Socket.bind(("localhost", 2500))
+        self.ClientForMarket_Socket.bind(("localhost", 1234))
         self.ClientForMarket_Socket.connect(("127.0.0.1", 2600))
 
 
@@ -55,7 +55,7 @@ class Client:
         self.privkey = private_key_str
         self.pubkeyf = self.pem.public_key()
 
-        entry = {'username': username,'pubkey':public_key_str,'privkey':private_key_str ,'type':self.type ,'hashed_username':hashed_username}
+        entry = {"username": username,"pubkey":public_key_str,"privkey":private_key_str ,"type":self.type ,"hashed_username":hashed_username}
 
         
         json.dump (entry,f)
@@ -96,7 +96,7 @@ def sell():
         print("Cannot Verify")
 
     ##########################################
-    data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type}
+    data = {"item": item,"price":price , "pubkey":c1.pubkey,"type":c1.type}
     data = str(data)
     data = data.encode("utf-8")
 
@@ -121,7 +121,7 @@ def buy():
     ##########################################
 
 
-    data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type}
+    data = {"item": item,"price":price , "pubkey":c1.pubkey,"type":c1.type}
     data = str(data)
     print(data)
 
