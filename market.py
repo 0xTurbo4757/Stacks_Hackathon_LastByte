@@ -469,12 +469,12 @@ class Market:
                 #print("json 2: {} t: {}".format(json.loads(json.dumps(Data)), type(json.loads(Data))))
                 #print("json 3: {} t: {}".format(json.loads(json.dumps(Data)), type(json.loads(json.dumps(Data)))))
                 
-                print("Data was: \n{}\n of type: \n{}".format(Data, type(Data)))
+                #print("Data was: \n{}\n of type: \n{}".format(Data, type(Data)))
                 Merchant_OrderBook_Add_JSON = json.loads(Data)
-                print("JSON was: \n{}\n of type: \n{}".format(Merchant_OrderBook_Add_JSON, type(Merchant_OrderBook_Add_JSON)))
+                #print("JSON was: \n{}\n of type: \n{}".format(Merchant_OrderBook_Add_JSON, type(Merchant_OrderBook_Add_JSON)))
 
-                print("\n\nData: {}\n\n".format(Merchant_OrderBook_Add_JSON))
-                print("json obj type: {}".format(type(Merchant_OrderBook_Add_JSON)))
+                #print("\n\nData: {}\n\n".format(Merchant_OrderBook_Add_JSON))
+                #print("json obj type: {}".format(type(Merchant_OrderBook_Add_JSON)))
 
                 #if Merchant doesnt Exists in ListOfUniqueMerchants
                 if (not(self.Check_if_Merchant_Exists_in_ExistingMerchant_List(Merchant_OrderBook_Add_JSON["pubkey"]))):
@@ -595,13 +595,13 @@ class Market:
             self.Request_Latest_BlockChain_from_Miner()
 
             #TESTING ONLY
-            self.Request_Miner_to_Add_TXN_to_BlockChain(
-                (
-                    0,
-                    1,
-                    50
-                )
-            )
+            # self.Request_Miner_to_Add_TXN_to_BlockChain(
+            #     (
+            #         0,
+            #         1,
+            #         50
+            #     )
+            # )
 
         #EndWhile
     #EndFunction

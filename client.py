@@ -79,8 +79,6 @@ class Client:
 
     def view_orderbook(self):
         data = "order"
-        data= data.encode("utf-8")
-
         c1.send_to_server(data)
         data = self.recv()
 
