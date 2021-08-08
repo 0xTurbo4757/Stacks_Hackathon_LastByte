@@ -23,7 +23,7 @@ if(blocknumber == 1):
                     "Previous Hash: ": "00000000",
                     "Data: ": transactionSarib,
                     "Nonce: ": testNonce,
-                    "CoinBase: ": "Initially 1000 coins alloted to clients"
+                    "CoinBase: ": "Initially 10000 coins are alloted to every new client that joins"
                 }
     }
 else:
