@@ -3,6 +3,10 @@ import socket
 import json
 
 class Market:
+    #Constants
+    MINER_BLOCKCHAIN_REQUEST_STR = "chain"
+    DATA_ENCODING_FORMAT = "utf-8"
+    
     def __init__(self, server_ip, server_port, client_ip, client_port):
 
         # Socket Handling As Server For client.py
@@ -11,7 +15,8 @@ class Market:
 
         # Socket Handling As Client For miner.py
         self.ClientForMiner_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.ClientForMiner_Socket.bind((client_ip, client_port))
+        #self.ClientForMiner_Socket.bind((client_ip, client_port))
+        self.ClientForMiner_SocketAddr = (client_ip, client_port)
 
         # Market Variables here
         self.OrderBook = []  # has dictionaries at each index
@@ -28,7 +33,7 @@ class Market:
     # EndFunction
 
     #OK
-    def Add_To_OrderBook(self, merchant_type, merchant_public_key, comodity_to_sell, comodity_price):   
+    def Add_Merchant_To_OrderBook(self, merchant_type, merchant_public_key, comodity_to_sell, comodity_price):   
 
         self.OrderBook.append(
             {
@@ -41,12 +46,12 @@ class Market:
     # EndFunction
 
     #OK
-    def Get_Index_of_merchant_in_OrderBook(self, target_merchant_public_key):
+    def Get_Index_of_merchant_in_OrderBook(self, merchant_public_key):
 
         index = 0
         for current_merchant in self.OrderBook:
 
-            if (current_merchant["m_pkey"] == target_merchant_public_key):
+            if (current_merchant["m_pkey"] == merchant_public_key):
                 return index
             #EndIf
 
@@ -55,6 +60,18 @@ class Market:
 
         #Return -1 to indicate we couldnt find the merchant
         return -1
+    #EndFunction
+
+    #
+    def Check_if_Merchant_Exists_in_OrderBook(self, merchant_public_key):
+        for current_merchant in self.OrderBook:
+            if (current_merchant["m_pkey"] == merchant_public_key):
+                return True
+            #EndIf
+        #EndFor
+
+        #Return False to indicate we couldnt find the merchant
+        return False
     #EndFunction
 
     #Returns Merchant Data as Dictionary
@@ -71,7 +88,7 @@ class Market:
     #EndFunction
 
     #OK
-    def Remove_From_OrderBook(self, merchant_public_key):
+    def Remove_Merchant_From_OrderBook(self, merchant_public_key):
 
         index = self.Get_Index_of_merchant_in_OrderBook(merchant_public_key)
 
@@ -81,6 +98,46 @@ class Market:
             print("MERCHANT NOT FOUND. THIS SHOULDNT HAVE HAPPENED!")
         #EndIf
     # EndFunction
+
+    #
+    def Add_Merchant_to_ExistingMerchants_List(self, merchant_public_key, merchant_network_addr):
+
+        self.ExistingMerchantList.append(
+            {
+                "m_pkey" : merchant_public_key,
+                "m_nIP" : merchant_network_addr[0],
+                "m_nPort" : merchant_network_addr[1]
+            }
+        )
+    #EndFunction
+
+    def Get_Merchant_Data_from_ExistingMerchants_List(self, merchant_public_key):
+        for current_merchant in self.ExistingMerchantList:
+
+            if (current_merchant["m_pkey"] == merchant_public_key):
+                return current_merchant
+            #EndIf
+        #EndFor
+
+        #Return a None to tell data not found
+        return None
+    #EndFunction
+
+    #
+    def Check_if_Merchant_Exists_in_ExistingMerchant_List(self, merchant_public_key):
+
+        for current_merchant in self.ExistingMerchantList:
+
+            if (current_merchant["m_pkey"] == merchant_public_key):
+
+                #Merchant found
+                return True
+            #EndIf
+        #EndFor
+
+        #Did not find merchant in list
+        return False
+    #EndFunction
 
     #OK
     # Checks OrderBook for potential Transactions
@@ -147,7 +204,21 @@ class Market:
 
         #Return all possible TXNs
         return potential_TXNs
-    # EndFunction
+    # EndFunction    
+
+    #SOCKET
+    def Request_Miner_to_Add_TXN_to_BlockChain(self, TXN_Data):
+        #Generate Request for miner
+        request_to_send_miner = str(TXN_Data[0])
+        request_to_send_miner += ","
+        request_to_send_miner += str(TXN_Data[1])
+        request_to_send_miner += ","
+        request_to_send_miner += str(TXN_Data[2])
+
+        #Request MINER HERE : SOCKET
+        print("Requested Miner '{}'".format(request_to_send_miner))
+        self.Send_Data_to_Miner(request_to_send_miner, self.ClientForMiner_SocketAddr)
+    #EndFunction
 
     #OK
     def Handle_All_Potential_TXNs_within_OrderBook(self):
@@ -180,7 +251,7 @@ class Market:
                 transfer_ammount = min(int(Buyer["m_price"]), int(Seller["m_price"]))
 
                 #Request Miner to add TXN in BlockChain
-                self.Request_Verified_TXN_by_Miner(
+                self.Request_Miner_to_Add_TXN_to_BlockChain(
 
                     #Send a tuple
                     (
@@ -196,8 +267,8 @@ class Market:
                 )
 
                 #clear OrderBook of Buyer and Seller
-                self.Remove_From_OrderBook(current_TXN[0])      #Remove Buyer Entry in OrderBook
-                self.Remove_From_OrderBook(current_TXN[1])      #Remove Seller Entry in OrderBook
+                self.Remove_Merchant_From_OrderBook(current_TXN[0])      #Remove Buyer Entry in OrderBook
+                self.Remove_Merchant_From_OrderBook(current_TXN[1])      #Remove Seller Entry in OrderBook
 
             else:
                 #Tell Buyer here that ur TXN cannot continue, not enough funds
@@ -206,22 +277,34 @@ class Market:
         #EndFor
     #EndFunction
 
-    #SOCKET
-    def Request_Verified_TXN_by_Miner(self, TXN_Data):
-        request_to_send_miner = str(TXN_Data[0])
-        request_to_send_miner += ","
-        request_to_send_miner += str(TXN_Data[1])
-        request_to_send_miner += ","
-        request_to_send_miner += str(TXN_Data[2])
-
-        #Request MINER HERE : SOCKET
-        print("Requested Miner '{}'".format(request_to_send_miner))
-    #EndFunction
-
     #OK
-    #Returns True or False
-    def Verify_Merchant_has_Enough_Balance(self, merchant_public_key):
-        return (self.Get_Merchant_Current_Balance(merchant_public_key) >= 0)
+    def Extract_Data_from_BlockChain_BlockData(self, target_block_data):
+        sender_addr = ""
+        receiver_addr = ""
+        ammount_transfered = ""
+        commas = 0
+
+        for current_char in target_block_data:
+            if (current_char == ','):
+                commas += 1
+                continue
+            #EndIf
+
+            if (commas == 0):
+                sender_addr += current_char
+            #EndIf
+
+            if (commas == 1):
+                receiver_addr += current_char
+            #EndIf
+
+            if (commas == 2):
+                ammount_transfered += current_char
+            #EndIf
+        #EndFor
+
+        #Return Extracted Data as tuple
+        return ((sender_addr, receiver_addr, ammount_transfered))
     #EndFunction
 
     #OK
@@ -270,73 +353,82 @@ class Market:
         #Return net balance
         return net_merchant_balance
     # EndFunction
+    
+    #OK
+    #Returns True or False
+    def Verify_Merchant_has_Enough_Balance(self, merchant_public_key):
+        return (self.Get_Merchant_Current_Balance(merchant_public_key) >= 0)
+    #EndFunction
+    
+    #SOCKET
+    def Send_Data_to_Merchant(self, data_to_send, merchant_addr):
+        self.ServerForClient_Socket.sendto(data_to_send.encode(Market.DATA_ENCODING_FORMAT), merchant_addr)
+    #EndFunction
+
+    #SOCKET
+    def Send_Data_to_Miner(self, data_to_send, miner_addr):
+        self.ClientForMiner_Socket.sendto(data_to_send.encode(Market.DATA_ENCODING_FORMAT), miner_addr)
+    #EndFunction
 
     #SOCKET
     #Send OrderBook to the Merchant requesting it
     def Send_OrderBook_to_Merchant(self, merchant_public_key):
-        pass
-    #EndFunction
-    
-    #OK
-    def Extract_Data_from_BlockChain_BlockData(self, target_block_data):
-        sender_addr = ""
-        receiver_addr = ""
-        ammount_transfered = ""
-        commas = 0
+        target_merchant = self.Get_Merchant_Data_from_ExistingMerchants_List(merchant_public_key)
 
-        for current_char in target_block_data:
-            if (current_char == ','):
-                commas += 1
-                continue
-            #EndIf
+        if (target_merchant == None):
+            return
+        #EndIf
 
-            if (commas == 0):
-                sender_addr += current_char
-            #EndIf
-
-            if (commas == 1):
-                receiver_addr += current_char
-            #EndIf
-
-            if (commas == 2):
-                ammount_transfered += current_char
-            #EndIf
-        #EndFor
-
-        #Return Extracted Data as tuple
-        return ((sender_addr, receiver_addr, ammount_transfered))
-    #EndFunction
-
-    #
-    def Add_Merchant_to_Existing_List(self, merchant_public_key, merchant_network_addr):
-
-        self.ExistingMerchantList.append(
-            {
-                "m_pkey" : merchant_public_key,
-                "m_nAddr" : merchant_network_addr
-            }
+        self.Send_Data_to_Merchant(
+            #OrderBook
+            str(self.OrderBook),
+            #Address Tuple
+            (
+                target_merchant["m_nIP"],
+                target_merchant["m_nPort"]
+            )
         )
     #EndFunction
 
-    #
-    def Check_if_Merchant_Exists_in_Existing_List(self, merchant_public_key):
-
-        for current_merchant in self.ExistingMerchantList:
-
-            if (current_merchant["m_pkey"] == merchant_public_key):
-
-                #Merchant found
-                return True
-            #EndIf
-        #EndFor
-
-        #Did not find merchant in list
-        return False
+    #SOCKET
+    def Request_Latest_BlockChain_from_Miner(self, miner_addr):
+        self.Send_Data_to_Miner(Market.MINER_BLOCKCHAIN_REQUEST_STR, miner_addr)
     #EndFunction
-    
+
     #OK
     def Get_BlockChain_Size(self):
         return len(self.BlockChain)
+    #EndFunction
+
+    #
+    def Update_Current_BlockChain(self, new_block_chain):
+        self.BlockChain = new_block_chain
+    #EndFunction
+
+    def Handle_Incoming_OrderBook_Requests(self):
+
+        print("Listening for Client Request")
+        while True:
+            try:
+                incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(8192)
+                Data = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
+                if (len(Data)):
+                    print("Data: {}".format(Data))
+                    print("Addr: {}".format(incomming_UDP_Data[1]))
+                #EndIf
+            except (KeyboardInterrupt, SystemExit):
+                exit()
+            #EndTry
+        #EndWhile
+    #EndFunction
+
+    def Handle_Incoming_BlockChain_from_Miner_THREADED(self):
+        while True:
+            incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(8192)
+            BlockChain_Data_RAW = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
+            Updated_BlockChain = json.loads(BlockChain_Data_RAW)
+            self.Update_Current_BlockChain(Updated_BlockChain)
+        #EndWhile
     #EndFunction
 
     #OK
@@ -373,16 +465,8 @@ class Market:
         print("BlockChain Size: {}".format(self.Get_BlockChain_Size()))
     #EndFunction
 
-    def Handle_Incomming_Request_for_OrderBook(self):
-
-        incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(8192)
-        Data = incomming_UDP_Data[0].decode("utf-8")
-        print(Data)
-        
-    #EndFunction
-
     #
-    def RunMarket(self):
+    def RunMarket(self):    
 
         #Main loop
         while True:
@@ -391,16 +475,15 @@ class Market:
     #EndFunction
 #EndClass
 
-
 def main():
     ip = "localhost"
     server_port = 2600
     client_port = 2500
     market = Market(ip, server_port, ip, client_port)
-    market.Add_To_OrderBook("Buyer", 1, "Chair", 50)
-    market.Add_To_OrderBook("Seller", 2, "Chair", 40)
-    market.Add_To_OrderBook("Buyer", 3, "Fan", 30)
-    market.Add_To_OrderBook("Seller", 4, "Fan", 40)
+    market.Add_Merchant_To_OrderBook("Buyer", 1, "Chair", 50)
+    market.Add_Merchant_To_OrderBook("Seller", 2, "Chair", 40)
+    market.Add_Merchant_To_OrderBook("Buyer", 3, "Fan", 30)
+    market.Add_Merchant_To_OrderBook("Seller", 4, "Fan", 40)
     #market.Print_OrderBook()
     #market.Remove_From_OrderBook(4)
     #print("\n---------------------------")
@@ -409,7 +492,7 @@ def main():
     #print(market.Extract_Data_from_BlockChain_BlockData("56841536845368435684359865,958451856958698546982,500"))
     market.Print_BlockChain()
     #print(market.Get_Merchant_Current_Balance("1"))
-    market.Handle_All_Potential_TXNs_within_OrderBook()
+    #market.Handle_Incoming_Request_for_OrderBook()
 # EndMain
 
 if __name__ == "__main__":
