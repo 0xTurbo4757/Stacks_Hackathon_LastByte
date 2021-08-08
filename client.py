@@ -7,15 +7,14 @@ import json
 import random
 
 class Client:
+    UDP_DATA_BUFFER_SIZE = 8192
 
     def __init__(self,username):
         #Socket Handeling
         self.ClientForMarket_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.ClientForMarket_Socket.bind(("localhost", 1234))
+        #self.ClientForMarket_Socket.bind(("localhost", 1234))
         self.ClientForMarket_Socket.connect(("localhost", 2600))
 
-
-        
         self.type = ""
         self.username = username
 
@@ -67,11 +66,11 @@ class Client:
 
 
     def send_to_server(self,data):
-        self.ClientForMarket_Socket.sendto(str(data).encode("utf-8"), "localhost",2600)
+        self.ClientForMarket_Socket.sendto(str(data).encode("utf-8"), ("localhost",2600))
 
     def recv(self):
 
-        incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(10000)
+        incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
         Data = incomming_UDP_Data[0].decode("utf-8")
         Client_Address = incomming_UDP_Data[1]
 
