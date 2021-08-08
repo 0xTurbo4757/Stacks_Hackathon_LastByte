@@ -131,8 +131,8 @@ def view_orderbook():
     data= data.encode("utf-8")
     c1.ClientForMarket_Socket.sendall(data)
     #c1.ClientForMarket_Socket.listen(5)
-    data = c1.ClientForMarket_Socket.recv(1024)
-
+    incomming_UDP_Data = c1.ClientForMarket_Socket.recvfrom(1024)
+    data = incomming_UDP_Data[0].decode("utf-8")
     print(data)
         
 
