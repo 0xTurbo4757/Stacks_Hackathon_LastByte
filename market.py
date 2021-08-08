@@ -5,7 +5,20 @@ import json
 class Market:
     #Constants
     MINER_BLOCKCHAIN_REQUEST_STR = "chain"
+    CLIENT_ORDERBOOK_REQUEST_STR = "order"
     DATA_ENCODING_FORMAT = "utf-8"
+    UDP_DATA_BUFFER_SIZE = 8192
+    NEW_MERCHANT_FUND_AMOUNT = 100
+    MINER_DEFAULT_ADDRESS = 0
+
+    MERCHANT_PUBLIC_KEY_STR = "m_pkey"
+    MERCHANT_TYPE_STR = "m_type"
+    MERCHANT_COMODITY_STR = "m_item"
+    MERCHANT_PRICE_STR = "m_price"
+    MERCHANT_IP_STR = "m_nIP"
+    MERCHANT_PORT_STR = "m_nPort"
+    MERCHANT_TYPE_BUYER_STR = "Buyer"
+    MERCHANT_TYPE_SELLER_STR = "Seller"
     
     def __init__(self, server_ip, server_port, client_ip, client_port):
 
@@ -37,10 +50,10 @@ class Market:
 
         self.OrderBook.append(
             {
-                "m_type": merchant_type,
-                "m_pkey": merchant_public_key,
-                "m_item": comodity_to_sell,
-                "m_price": comodity_price
+                Market.MERCHANT_TYPE_STR: merchant_type,
+                Market.MERCHANT_PUBLIC_KEY_STR : merchant_public_key,
+                Market.MERCHANT_COMODITY_STR: comodity_to_sell,
+                Market.MERCHANT_PRICE_STR: comodity_price
             }
         )
     # EndFunction
@@ -51,7 +64,7 @@ class Market:
         index = 0
         for current_merchant in self.OrderBook:
 
-            if (current_merchant["m_pkey"] == merchant_public_key):
+            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
                 return index
             #EndIf
 
@@ -65,7 +78,7 @@ class Market:
     #
     def Check_if_Merchant_Exists_in_OrderBook(self, merchant_public_key):
         for current_merchant in self.OrderBook:
-            if (current_merchant["m_pkey"] == merchant_public_key):
+            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
                 return True
             #EndIf
         #EndFor
@@ -78,7 +91,7 @@ class Market:
     def Get_Merchant_Data_from_OrderBook(self, target_merchant_public_key):
         for current_merchant in self.OrderBook:
 
-            if (current_merchant["m_pkey"] == target_merchant_public_key):
+            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == target_merchant_public_key):
                 return current_merchant
             #EndIf
         #EndFor
@@ -104,9 +117,9 @@ class Market:
 
         self.ExistingMerchantList.append(
             {
-                "m_pkey" : merchant_public_key,
-                "m_nIP" : merchant_network_addr[0],
-                "m_nPort" : merchant_network_addr[1]
+                Market.MERCHANT_PUBLIC_KEY_STR : merchant_public_key,
+                Market.MERCHANT_IP_STR : merchant_network_addr[0],
+                Market.MERCHANT_PORT_STR : merchant_network_addr[1]
             }
         )
     #EndFunction
@@ -114,7 +127,7 @@ class Market:
     def Get_Merchant_Data_from_ExistingMerchants_List(self, merchant_public_key):
         for current_merchant in self.ExistingMerchantList:
 
-            if (current_merchant["m_pkey"] == merchant_public_key):
+            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
                 return current_merchant
             #EndIf
         #EndFor
@@ -128,7 +141,7 @@ class Market:
 
         for current_merchant in self.ExistingMerchantList:
 
-            if (current_merchant["m_pkey"] == merchant_public_key):
+            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
 
                 #Merchant found
                 return True
@@ -137,174 +150,6 @@ class Market:
 
         #Did not find merchant in list
         return False
-    #EndFunction
-
-    #OK
-    # Checks OrderBook for potential Transactions
-    # Returns a list of tuples of TXN pKeys: buyer,seller
-    def Get_All_Potential_TXN_in_OrderBook(self):
-        
-        #Stores Tuple of Buyer,Seller Public Keys who can Transact
-        potential_TXNs = []
-
-        #Return if none or just 1 order in orderBook
-        if ((len(self.OrderBook) == 0) or (len(self.OrderBook) == 1)):
-            return
-        #EndIf
-
-        #Get All Potential Transactions in the order book
-        #For Each order in OrderBook
-        for external_order_iterator in self.OrderBook:
-
-            #For Each order in OrderBook starting from 2nd Element
-            for internal_order_iterator in range(1, len(self.OrderBook)):
-
-                #If current Order type matches the other order type in the order list
-                if (external_order_iterator["m_item"] == self.OrderBook[internal_order_iterator]["m_item"]):
-
-                    #If External Iterator is Buyer
-                    if (external_order_iterator["m_type"] == "Buyer"):
-
-                        #If Internal Iterator is a Buyer
-                        if (self.OrderBook[internal_order_iterator]["m_type"] == "Buyer"):
-
-                            #Do nothing, its just a buyer vs buyer
-                            pass
-
-                        #If Internal Iterator is a Seller
-                        elif (self.OrderBook[internal_order_iterator]["m_type"] == "Seller"):
-
-                            #TXN if Buyer Price >= Seller
-                            if (external_order_iterator["m_price"] >= self.OrderBook[internal_order_iterator]["m_price"]):
-                                potential_TXNs.append((external_order_iterator["m_pkey"], self.OrderBook[internal_order_iterator]["m_pkey"]))
-                            #EndIf
-                        #EndIf
-
-                    #If External Iterator is Seller
-                    elif (external_order_iterator["m_type"] == "Seller"):
-
-                        #If Internal Iterator is a Buyer
-                        if (self.OrderBook[internal_order_iterator]["m_type"] == "Buyer"):
-
-                            #TXN if Buyer Price >= Seller
-                            if (self.OrderBook[internal_order_iterator]["m_price"] >= external_order_iterator["m_price"]):
-                                potential_TXNs.append((external_order_iterator["m_pkey"], self.OrderBook[internal_order_iterator]["m_pkey"]))
-                            #EndIf
-                        
-                        #If Internal Iterator is a Seller
-                        elif (self.OrderBook[internal_order_iterator]["m_type"] == "Seller"):
-
-                            #Do nothing, its just a Seller vs Seller
-                            pass
-                        #EndIf
-                    #EndIf
-                #EndIf
-            #EndFor
-        #EndFor
-
-        #Return all possible TXNs
-        return potential_TXNs
-    # EndFunction    
-
-    #SOCKET
-    def Request_Miner_to_Add_TXN_to_BlockChain(self, TXN_Data):
-        #Generate Request for miner
-        request_to_send_miner = str(TXN_Data[0])
-        request_to_send_miner += ","
-        request_to_send_miner += str(TXN_Data[1])
-        request_to_send_miner += ","
-        request_to_send_miner += str(TXN_Data[2])
-
-        #Request MINER HERE : SOCKET
-        print("Requested Miner '{}'".format(request_to_send_miner))
-        self.Send_Data_to_Miner(request_to_send_miner, self.ClientForMiner_SocketAddr)
-    #EndFunction
-
-    #OK
-    def Handle_All_Potential_TXNs_within_OrderBook(self):
-        
-        list_of_all_TXNs_possible = self.Get_All_Potential_TXN_in_OrderBook()
-
-        #There are no TXNs to make
-        if (list_of_all_TXNs_possible == None):
-            return
-        #EndIf
-
-        #For All possible TXNs
-        for current_TXN in self.Get_All_Potential_TXN_in_OrderBook():
-            
-            #If Buyer has enough Balance
-            if (self.Verify_Merchant_has_Enough_Balance(current_TXN[0])):
-
-                #Get Buyer Seller Data as Dict
-                Buyer = self.Get_Merchant_Data_from_OrderBook(current_TXN[0])
-                Seller = self.Get_Merchant_Data_from_OrderBook(current_TXN[1])
-
-                #Error Handling
-                if (Buyer == None or Seller == None):
-                    #TXN cant Happen. Buyer Seller Not Found
-                    print("TXN cant Happen. Buyer {} Seller {} Not Found".format(current_TXN[0], current_TXN[1]))
-                    continue
-                #EndIf
-
-                #Calculate Transfer Ammount
-                transfer_ammount = min(int(Buyer["m_price"]), int(Seller["m_price"]))
-
-                #Request Miner to add TXN in BlockChain
-                self.Request_Miner_to_Add_TXN_to_BlockChain(
-
-                    #Send a tuple
-                    (
-                        #Sender Address (Buyer)
-                        current_TXN[0],
-
-                        #Receiver Address (Seller)
-                        current_TXN[1],
-
-                        #Amount Transfered (Min of what buyer was giving and seller was demanding)
-                        transfer_ammount
-                    )
-                )
-
-                #clear OrderBook of Buyer and Seller
-                self.Remove_Merchant_From_OrderBook(current_TXN[0])      #Remove Buyer Entry in OrderBook
-                self.Remove_Merchant_From_OrderBook(current_TXN[1])      #Remove Seller Entry in OrderBook
-
-            else:
-                #Tell Buyer here that ur TXN cannot continue, not enough funds
-                pass
-            #EndIf
-        #EndFor
-    #EndFunction
-
-    #OK
-    def Extract_Data_from_BlockChain_BlockData(self, target_block_data):
-        sender_addr = ""
-        receiver_addr = ""
-        ammount_transfered = ""
-        commas = 0
-
-        for current_char in target_block_data:
-            if (current_char == ','):
-                commas += 1
-                continue
-            #EndIf
-
-            if (commas == 0):
-                sender_addr += current_char
-            #EndIf
-
-            if (commas == 1):
-                receiver_addr += current_char
-            #EndIf
-
-            if (commas == 2):
-                ammount_transfered += current_char
-            #EndIf
-        #EndFor
-
-        #Return Extracted Data as tuple
-        return ((sender_addr, receiver_addr, ammount_transfered))
     #EndFunction
 
     #OK
@@ -359,10 +204,122 @@ class Market:
     def Verify_Merchant_has_Enough_Balance(self, merchant_public_key):
         return (self.Get_Merchant_Current_Balance(merchant_public_key) >= 0)
     #EndFunction
-    
+
+    #OK
+    # Checks OrderBook for potential Transactions
+    # Returns a list of tuples of TXN pKeys: buyer,seller
+    def Get_All_Potential_TXN_in_OrderBook(self):
+        
+        #Stores Tuple of Buyer,Seller Public Keys who can Transact
+        potential_TXNs = []
+
+        #Return if none or just 1 order in orderBook
+        if ((len(self.OrderBook) == 0) or (len(self.OrderBook) == 1)):
+            return
+        #EndIf
+
+        #Get All Potential Transactions in the order book
+        #For Each order in OrderBook
+        for external_order_iterator in self.OrderBook:
+
+            #For Each order in OrderBook starting from 2nd Element
+            for internal_order_iterator in range(1, len(self.OrderBook)):
+
+                #If current Order type matches the other order type in the order list
+                if (external_order_iterator[Market.MERCHANT_COMODITY_STR] == self.OrderBook[internal_order_iterator][Market.MERCHANT_COMODITY_STR]):
+
+                    #If External Iterator is Buyer
+                    if (external_order_iterator[Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_BUYER_STR):
+
+                        #If Internal Iterator is a Buyer
+                        if (self.OrderBook[internal_order_iterator][Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_BUYER_STR):
+
+                            #Do nothing, its just a buyer vs buyer
+                            pass
+
+                        #If Internal Iterator is a Seller
+                        elif (self.OrderBook[internal_order_iterator][Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_SELLER_STR):
+
+                            #TXN if Buyer Price >= Seller
+                            if (external_order_iterator[Market.MERCHANT_PRICE_STR] >= self.OrderBook[internal_order_iterator][Market.MERCHANT_PRICE_STR]):
+                                potential_TXNs.append((external_order_iterator[Market.MERCHANT_PUBLIC_KEY_STR], self.OrderBook[internal_order_iterator][Market.MERCHANT_PUBLIC_KEY_STR]))
+                            #EndIf
+                        #EndIf
+
+                    #If External Iterator is Seller
+                    elif (external_order_iterator[Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_SELLER_STR):
+
+                        #If Internal Iterator is a Buyer
+                        if (self.OrderBook[internal_order_iterator][Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_BUYER_STR):
+
+                            #TXN if Buyer Price >= Seller
+                            if (self.OrderBook[internal_order_iterator][Market.MERCHANT_PRICE_STR] >= external_order_iterator[Market.MERCHANT_PRICE_STR]):
+                                potential_TXNs.append((external_order_iterator[Market.MERCHANT_PUBLIC_KEY_STR], self.OrderBook[internal_order_iterator][Market.MERCHANT_PUBLIC_KEY_STR]))
+                            #EndIf
+                        
+                        #If Internal Iterator is a Seller
+                        elif (self.OrderBook[internal_order_iterator][Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_SELLER_STR):
+
+                            #Do nothing, its just a Seller vs Seller
+                            pass
+                        #EndIf
+                    #EndIf
+                #EndIf
+            #EndFor
+        #EndFor
+
+        #Return all possible TXNs
+        return potential_TXNs
+    # EndFunction    
+
+    #OK
+    def Extract_Data_from_BlockChain_BlockData(self, target_block_data):
+        sender_addr = ""
+        receiver_addr = ""
+        ammount_transfered = ""
+        commas = 0
+
+        for current_char in target_block_data:
+            if (current_char == ','):
+                commas += 1
+                continue
+            #EndIf
+
+            if (commas == 0):
+                sender_addr += current_char
+            #EndIf
+
+            if (commas == 1):
+                receiver_addr += current_char
+            #EndIf
+
+            if (commas == 2):
+                ammount_transfered += current_char
+            #EndIf
+        #EndFor
+
+        #Return Extracted Data as tuple
+        return ((sender_addr, receiver_addr, ammount_transfered))
+    #EndFunction
+
+    # ----------------------------- SOCKET -----------------------------
     #SOCKET
     def Send_Data_to_Merchant(self, data_to_send, merchant_addr):
         self.ServerForClient_Socket.sendto(data_to_send.encode(Market.DATA_ENCODING_FORMAT), merchant_addr)
+    #EndFunction
+
+    #SOCKET
+    def Get_Data_from_Merchant(self):
+        incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(Market.UDP_DATA_BUFFER_SIZE)
+        Data = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
+        return ((Data, incomming_UDP_Data[0]))
+    #EndFunction
+
+    #SOCKET
+    def Get_Data_from_Miner(self):
+        incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(Market.UDP_DATA_BUFFER_SIZE)
+        Data = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
+        return ((Data, incomming_UDP_Data[0]))
     #EndFunction
 
     #SOCKET
@@ -371,7 +328,21 @@ class Market:
     #EndFunction
 
     #SOCKET
-    #Send OrderBook to the Merchant requesting it
+    #Send OrderBook to the Merchant requesting it using merchant Addr (tuple)
+    def Send_OrderBook_to_Merchant(self, merchant_addr):
+        self.Send_Data_to_Merchant(
+            #OrderBook
+            str(self.OrderBook),
+            #Address Tuple
+            (
+                merchant_addr[0],
+                merchant_addr[1]
+            )
+        )
+    #EndFunction
+
+    #SOCKET
+    #Send OrderBook to the Merchant requesting it using Existing Merchant List
     def Send_OrderBook_to_Merchant(self, merchant_public_key):
         target_merchant = self.Get_Merchant_Data_from_ExistingMerchants_List(merchant_public_key)
 
@@ -379,56 +350,163 @@ class Market:
             return
         #EndIf
 
-        self.Send_Data_to_Merchant(
-            #OrderBook
-            str(self.OrderBook),
-            #Address Tuple
-            (
-                target_merchant["m_nIP"],
-                target_merchant["m_nPort"]
-            )
-        )
+        #Send OrderBook
+        self.Send_OrderBook_to_Merchant((target_merchant[Market.MERCHANT_IP_STR], target_merchant[Market.MERCHANT_PORT_STR]))
+    #EndFunction
+
+    #SOCKET
+    #TXN Data tuple: (SENDER, RECEIVER, AMOUNT)
+    def Request_Miner_to_Add_TXN_to_BlockChain(self, TXN_Data):
+        #Generate Request for miner: SENDER, RECEIVER, AMOUNT
+        request_to_send_miner = str(TXN_Data[0])
+        request_to_send_miner += ","
+        request_to_send_miner += str(TXN_Data[1])
+        request_to_send_miner += ","
+        request_to_send_miner += str(TXN_Data[2])
+
+        #Request MINER HERE : SOCKET
+        print("Requested Miner '{}'".format(request_to_send_miner))
+        self.Send_Data_to_Miner(request_to_send_miner, self.ClientForMiner_SocketAddr)
     #EndFunction
 
     #SOCKET
     def Request_Latest_BlockChain_from_Miner(self, miner_addr):
         self.Send_Data_to_Miner(Market.MINER_BLOCKCHAIN_REQUEST_STR, miner_addr)
     #EndFunction
-
-    #OK
-    def Get_BlockChain_Size(self):
-        return len(self.BlockChain)
-    #EndFunction
+    # ----------------------------- SOCKET -----------------------------
 
     #
     def Update_Current_BlockChain(self, new_block_chain):
         self.BlockChain = new_block_chain
     #EndFunction
 
-    def Handle_Incoming_OrderBook_Requests(self):
+    # ----------------------------- HANDLERS -----------------------------
+    #OK
+    def Handle_All_Potential_TXNs_within_OrderBook(self):
+        
+        list_of_all_TXNs_possible = self.Get_All_Potential_TXN_in_OrderBook()
 
-        print("Listening for Client Request")
-        while True:
-            try:
-                incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(8192)
-                Data = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
-                if (len(Data)):
-                    print("Data: {}".format(Data))
-                    print("Addr: {}".format(incomming_UDP_Data[1]))
+        #There are no TXNs to make
+        if (list_of_all_TXNs_possible == None):
+            return
+        #EndIf
+
+        #For All possible TXNs
+        for current_TXN in self.Get_All_Potential_TXN_in_OrderBook():
+            
+            #If Buyer has enough Balance
+            if (self.Verify_Merchant_has_Enough_Balance(current_TXN[0])):
+
+                #Get Buyer Seller Data as Dict
+                Buyer = self.Get_Merchant_Data_from_OrderBook(current_TXN[0])
+                Seller = self.Get_Merchant_Data_from_OrderBook(current_TXN[1])
+
+                #Error Handling
+                if (Buyer == None or Seller == None):
+                    #TXN cant Happen. Buyer Seller Not Found
+                    print("TXN cant Happen. Buyer {} Seller {} Not Found".format(current_TXN[0], current_TXN[1]))
+                    continue
                 #EndIf
-            except (KeyboardInterrupt, SystemExit):
-                exit()
-            #EndTry
-        #EndWhile
+
+                #Calculate Transfer Ammount
+                transfer_ammount = min(int(Buyer[Market.MERCHANT_PRICE_STR]), int(Seller[Market.MERCHANT_PRICE_STR]))
+
+                #Request Miner to add TXN in BlockChain
+                self.Request_Miner_to_Add_TXN_to_BlockChain(
+
+                    #Send a tuple
+                    (
+                        #Sender Address (Buyer)
+                        current_TXN[0],
+
+                        #Receiver Address (Seller)
+                        current_TXN[1],
+
+                        #Amount Transfered (Min of what buyer was giving and seller was demanding)
+                        transfer_ammount
+                    )
+                )
+
+                #clear OrderBook of Buyer and Seller
+                self.Remove_Merchant_From_OrderBook(current_TXN[0])      #Remove Buyer Entry in OrderBook
+                self.Remove_Merchant_From_OrderBook(current_TXN[1])      #Remove Seller Entry in OrderBook
+
+            else:
+                #Tell Buyer here that ur TXN cannot continue, not enough funds
+                pass
+            #EndIf
+        #EndFor
+    #EndFunction
+
+    def Handle_Incoming_Request_from_Merchant(self):
+        print("Listening for Client Request")
+        Data, Client_Address = self.Get_Data_from_Merchant()
+        if (len(Data)):
+            print("Received Data: {}".format(Data))
+            print("From Addr    : {}".format(Client_Address))
+
+            #If Merchant Expects Latest OrderBook, send it to them
+            if (Data == Market.CLIENT_ORDERBOOK_REQUEST_STR):
+                self.Send_OrderBook_to_Merchant(Client_Address)
+            else:
+
+                #We have received request to add something to orderbook
+                Merchant_OrderBook_Add_JSON = json.loads(Data)
+
+                #if Merchant doesnt Exists in ListOfUniqueMerchants
+                if (not(self.Check_if_Merchant_Exists_in_ExistingMerchant_List(Merchant_OrderBook_Add_JSON["pubkey"]))):
+
+                    #Add Merchant to Existing Merchant List
+                    self.Add_Merchant_to_ExistingMerchants_List(
+                        Merchant_OrderBook_Add_JSON["pubkey"],
+                        Client_Address
+                    )
+
+                    #Request Miner to give new merchant funds
+                    self.Request_Miner_to_Add_TXN_to_BlockChain(
+                        (
+                            Market.MINER_DEFAULT_ADDRESS,
+                            Merchant_OrderBook_Add_JSON["pubkey"],
+                            Market.NEW_MERCHANT_FUND_AMOUNT
+                        )
+                    )
+                    
+                #This isnt a new merchant
+                else:
+                    pass
+                #EndIf
+
+                #if Merchant doesnt Exists in OrderBook
+                if (not(self.Check_if_Merchant_Exists_in_OrderBook(Merchant_OrderBook_Add_JSON["pubkey"]))):
+
+                    #Add Merchant Request to OrderBook
+                    self.Add_Merchant_To_OrderBook(
+                        Merchant_OrderBook_Add_JSON["type"],
+                        Merchant_OrderBook_Add_JSON["pubkey"],
+                        Merchant_OrderBook_Add_JSON["item"],
+                        Merchant_OrderBook_Add_JSON["price"]
+                    )
+                #A Merchant request already exists in orderbook
+                else:
+                    pass                   
+                #EndIf
+            #EndIf
+        #EndIf
     #EndFunction
 
     def Handle_Incoming_BlockChain_from_Miner_THREADED(self):
         while True:
-            incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(8192)
-            BlockChain_Data_RAW = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
+            BlockChain_Data_RAW, Miner_Address = self.Get_Data_from_Miner()
             Updated_BlockChain = json.loads(BlockChain_Data_RAW)
             self.Update_Current_BlockChain(Updated_BlockChain)
         #EndWhile
+    #EndFunction
+    # ----------------------------- HANDLERS -----------------------------
+
+    # ----------------------------- MISC -----------------------------
+    #OK
+    def Get_BlockChain_Size(self):
+        return len(self.BlockChain)
     #EndFunction
 
     #OK
@@ -442,10 +520,10 @@ class Market:
         index = 1
         for current_order in self.OrderBook:
             print("\nMerchant {}".format(index))
-            print("Merchant Type : {}".format(current_order["m_type"]))
-            print("Merchant Key  : {}".format(current_order["m_pkey"]))
-            print("Merchant Item : {}".format(current_order["m_item"]))
-            print("Merchant Price: {}".format(current_order["m_price"]))
+            print("Merchant Type : {}".format(current_order[Market.MERCHANT_TYPE_STR]))
+            print("Merchant Key  : {}".format(current_order[Market.MERCHANT_PUBLIC_KEY_STR]))
+            print("Merchant Item : {}".format(current_order[Market.MERCHANT_COMODITY_STR]))
+            print("Merchant Price: {}".format(current_order[Market.MERCHANT_PRICE_STR]))
 
             index += 1
         # EndFor
@@ -464,13 +542,26 @@ class Market:
         self.Print_JSON_Object(self.BlockChain)
         print("BlockChain Size: {}".format(self.Get_BlockChain_Size()))
     #EndFunction
+    # ----------------------------- MISC -----------------------------
 
-    #
+    #Main Loop
     def RunMarket(self):    
 
         #Main loop
         while True:
-            pass
+
+            #Handle Client.py requesting Latest OrderBook or Request To Add New Order
+            #Also Adds New Unique merchant in ExistingMerchantList
+            #If New Merchant, Requests Miner to give default fund to Merchant (Sends TXN request)
+            self.Handle_Incoming_Request_from_Merchant()
+
+            #Keeps Checking OrderBook for potential TXN
+            #If TXN possible, Calculates Balance of Buyer
+            #If Sufficient Balance exists, 
+            #Sends TXN request to miner
+            #Then Removes Buyer & Seller entry in OrderBook
+            self.Handle_All_Potential_TXNs_within_OrderBook()
+
         #EndWhile
     #EndFunction
 #EndClass
@@ -480,10 +571,10 @@ def main():
     server_port = 2600
     client_port = 2500
     market = Market(ip, server_port, ip, client_port)
-    market.Add_Merchant_To_OrderBook("Buyer", 1, "Chair", 50)
-    market.Add_Merchant_To_OrderBook("Seller", 2, "Chair", 40)
-    market.Add_Merchant_To_OrderBook("Buyer", 3, "Fan", 30)
-    market.Add_Merchant_To_OrderBook("Seller", 4, "Fan", 40)
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
     #market.Print_OrderBook()
     #market.Remove_From_OrderBook(4)
     #print("\n---------------------------")
