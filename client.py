@@ -11,8 +11,9 @@ class Client:
     def __init__(self,username):
         #Socket Handeling
         self.ClientForMarket_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        #self.ClientForMarket_Socket.bind(("localhost", 2600))
+        self.ClientForMarket_Socket.bind(("localhost", 2500))
         self.ClientForMarket_Socket.connect(("127.0.0.1", 2600))
+
 
         
         self.type = ""
@@ -90,7 +91,7 @@ def sell():
         print("Cannot Verify")
 
     ##########################################
-    data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type,'hash':hashh}
+    data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type}
     data = str(data)
     data = data.encode("utf-8")
 
@@ -117,11 +118,23 @@ def buy():
 
     data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type}
     data = str(data)
+    print(data)
+
+
     data = data.encode("utf-8")
 
-
+    
     c1.ClientForMarket_Socket.sendall(data)
 
+def view_orderbook():
+    data = "order"
+    data= data.encode("utf-8")
+    c1.ClientForMarket_Socket.sendall(data)
+    #c1.ClientForMarket_Socket.listen(5)
+    data = c1.ClientForMarket_Socket.recv(1024)
+
+    print(data)
+        
 
 
 
@@ -182,7 +195,7 @@ while True:
         if (temp == 2):
             buy()
         if (temp == 3):
-            foo()
+            view_orderbook()
         if (temp == 4):
             print(c1.pubkey + "\n")
         if (temp == 5):
