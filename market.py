@@ -469,7 +469,9 @@ class Market:
                 #print("json 2: {} t: {}".format(json.loads(json.dumps(Data)), type(json.loads(Data))))
                 #print("json 3: {} t: {}".format(json.loads(json.dumps(Data)), type(json.loads(json.dumps(Data)))))
                 
+                print("Data was: \n{}\n of type: \n{}".format(Data, type(Data)))
                 Merchant_OrderBook_Add_JSON = json.loads(Data)
+                print("JSON was: \n{}\n of type: \n{}".format(Merchant_OrderBook_Add_JSON, type(Merchant_OrderBook_Add_JSON)))
 
                 print("\n\nData: {}\n\n".format(Merchant_OrderBook_Add_JSON))
                 print("json obj type: {}".format(type(Merchant_OrderBook_Add_JSON)))
@@ -611,10 +613,10 @@ def main():
     client_port = 2500
     market = Market(ip, server_port, ip, client_port)
     
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
+    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
+    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
+    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
+    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
     #market.Print_OrderBook()
     #market.Remove_From_OrderBook(4)
     #print("\n---------------------------")
