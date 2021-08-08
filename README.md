@@ -3,8 +3,8 @@ ByteMarket is a blockchain based decentralized exchange for buying & selling goo
 ## Requirements
 Your machine should have the latest version of python3 installed for proper working.
 
-## Running the Application
-pip install cryptography
+## Requirements
+    pip install cryptography
 
 ## Assumptions
 •	Each buyer and seller, can only place one bid/ask price placed in the order book at a time.
