@@ -7,15 +7,14 @@ import json
 import random
 
 class Client:
+    UDP_DATA_BUFFER_SIZE = 8192
 
     def __init__(self,username):
         #Socket Handeling
         self.ClientForMarket_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.ClientForMarket_Socket.bind(("localhost", 1234))
-        self.ClientForMarket_Socket.connect(("127.0.0.1", 2600))
+        #self.ClientForMarket_Socket.bind(("localhost", 1234))
+        self.ClientForMarket_Socket.connect(("localhost", 2600))
 
-
-        
         self.type = ""
         self.username = username
 
@@ -67,11 +66,23 @@ class Client:
 
 
     def send_to_server(self,data):
-        self.ClientForMarket_Socket.sendto(data, ("localhost", 2600))
+        self.ClientForMarket_Socket.sendto(str(data).encode("utf-8"), ("localhost",2600))
+
     def recv(self):
-            incomming_UDP_Data = c1.ClientForMarket_Socket.recvfrom(1024)
-            data = incomming_UDP_Data[0].decode("utf-8")
-            return data
+
+        incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
+        Data = incomming_UDP_Data[0].decode("utf-8")
+        Client_Address = incomming_UDP_Data[1]
+
+        if (len(Data)):
+            return Data
+
+    def view_orderbook(self):
+        data = "order"
+        data= data.encode("utf-8")
+
+        c1.send_to_server(data)
+        data = self.recv()
 
 
 
@@ -123,21 +134,14 @@ def buy():
 
     data = {"item": item,"price":price , "pubkey":c1.pubkey,"type":c1.type}
     data = str(data)
-    print(data)
-
 
     data = data.encode("utf-8")
 
-    
-    
-
-
-def view_orderbook():
-    data = "order"
-    data= data.encode("utf-8")
-
     c1.send_to_server(data)
-    data = c1.recv()
+    
+
+
+
         
 
 
@@ -174,7 +178,7 @@ while True:
         if (temp == 2):
             sell()
         if (temp == 3):
-            print(foo())
+            c1.view_orderbook()
         if (temp == 4):
             print(c1.pubkey)
         if (temp == 5):
@@ -199,7 +203,7 @@ while True:
         if (temp == 2):
             buy()
         if (temp == 3):
-            view_orderbook()
+            c1.view_orderbook()
         if (temp == 4):
             print(c1.pubkey + "\n")
         if (temp == 5):

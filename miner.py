@@ -16,6 +16,7 @@ class Miner:
         self.previousBlockHash = "00000000000000000000000000000000000000000000000000000000000000000"
         self.transactionSarib = "Sender2,Reciever2,Price2"
         self.blockdata = {}
+        self.Entire_BlockChain = {}
 
         # Socket Handling As Server For market.py & client.py
         self.ServerForClient_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -77,14 +78,18 @@ class Miner:
         # Serializing json
         json_object = json.dumps(self.blockdata, indent=4)
         # Writing to sample.json
-        with open("BlockChain.json", "a+") as file:
+        with open("BlockChain.json", "r+") as file:
             data = json.load(file)
             # Appending to the BlockChain
             data.update(self.blockdata)
-
             file.seek(0)
-
             json.dump(data, file, indent=4)
+
+        
+        f = open("BlockChain.json","r+")
+        self.Entire_BlockChain = json.load(f)
+        f.close()
+        print("\nEntire BlockChain: \n{}\n".format(str(self.Entire_BlockChain)))
 
         self.blocknumber = self.blocknumber + 1
         self.previousBlockHash = currentBlockHash
@@ -99,7 +104,7 @@ class Miner:
             print("\nReceived Data: {}".format(Data))
             #If Client Expects Latest BlockChain, send it to them
             if (Data == Miner.MINER_BLOCKCHAIN_REQUEST_STR):
-                self.ServerForClient_Socket.sendto(str(self.blockdata).encode(Miner.DATA_ENCODING_FORMAT), Client_Address)
+                self.ServerForClient_Socket.sendto(str(self.Entire_BlockChain).encode(Miner.DATA_ENCODING_FORMAT), Client_Address)
             #Market sent TXN Request
             elif (Data[0:3] == "TXN"):
                 #Save Market_Addr
@@ -108,6 +113,9 @@ class Miner:
                 self.transactionSarib = Data[4:]
                 print("Got TXN Request: {}".format(self.transactionSarib))
                 #Initiate Mining
+
+
+                print("transactionSarib was {}".format(self.transactionSarib))
                 self.Update_BlockChain()
             #EndIf
         #EndIf
@@ -121,6 +129,12 @@ class Miner:
 #EndClass
 
 def main():
+
+    #Empty Json file to prevent errors
+    f = open("BlockChain.json","w")
+    f.write("{\n\t\n}")
+    f.close()
+    
     ip = "localhost"
     server_port = 2500
     miner = Miner(ip, server_port)

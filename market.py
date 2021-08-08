@@ -376,7 +376,7 @@ class Market:
         request_to_send_miner += str(TXN_Data[2])
 
         #Request MINER HERE : SOCKET
-        print("Requested Miner '{}'".format(request_to_send_miner))
+        print("\nRequested Miner '{}'".format(request_to_send_miner))
         self.Send_Data_to_Miner(request_to_send_miner)
     #EndFunction
 
@@ -450,7 +450,7 @@ class Market:
     #EndFunction
 
     def Handle_Incoming_Request_from_Merchant(self):
-        print("Listening for Client Request")
+        print("\nListening for Client Request")
         Data, Client_Address = self.Get_Data_from_Merchant()
         if (len(Data)):
             print("\n\nReceived Data: {}".format(Data))
@@ -511,8 +511,10 @@ class Market:
         while True:
             BlockChain_Data_RAW, Miner_Address = self.Get_Data_from_Miner()
             if (len(BlockChain_Data_RAW)):
-                print("Received BlockChain {}".format(BlockChain_Data_RAW))
+                #print("Received BlockChain {}".format(BlockChain_Data_RAW))
                 Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
+                print("Received BlockChain:\n")
+                self.Print_JSON_Object(Updated_BlockChain)
                 self.Update_Current_BlockChain(Updated_BlockChain)
             #EndIf
         #EndWhile
@@ -561,7 +563,7 @@ class Market:
     # ----------------------------- MISC -----------------------------
 
     #Main Loop
-    def RunMarket(self):    
+    def RunMarket(self):
 
         #Main loop
         while True:
@@ -582,6 +584,7 @@ class Market:
             #Received BlockChain asynchronously updated using threads
             self.Request_Latest_BlockChain_from_Miner()
 
+            #TESTING ONLY
             self.Request_Miner_to_Add_TXN_to_BlockChain(
                 (
                     0,
