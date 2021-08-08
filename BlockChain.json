@@ -1,1 +1,14 @@
-{}
+{
+    "1": {
+        "Previous Hash: ": "00000000",
+        "Data: ": "Sender2,Reciever2,Price2",
+        "Nonce: ": 29,
+        "CoinBase: ": "Initially 1000 coins alloted to clients"
+    },
+    "1": {
+        "Previous Hash: ": "00000000",
+        "Data: ": "Sender2,Reciever2,Price2",
+        "Nonce: ": 29,
+        "CoinBase: ": "Initially 1000 coins alloted to clients"
+    }
+}
