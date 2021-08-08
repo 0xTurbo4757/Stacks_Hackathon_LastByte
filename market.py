@@ -452,7 +452,7 @@ class Market:
             else:
 
                 #We have received request to add something to orderbook
-                Merchant_OrderBook_Add_JSON = json.loads(json.dump(Data))
+                Merchant_OrderBook_Add_JSON = json.loads(json.dumps(Data))
 
                 #if Merchant doesnt Exists in ListOfUniqueMerchants
                 if (not(self.Check_if_Merchant_Exists_in_ExistingMerchant_List(Merchant_OrderBook_Add_JSON["pubkey"]))):
