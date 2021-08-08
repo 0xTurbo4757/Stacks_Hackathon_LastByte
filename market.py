@@ -10,6 +10,15 @@ class Market:
     UDP_DATA_BUFFER_SIZE = 8192
     NEW_MERCHANT_FUND_AMOUNT = 100
     MINER_DEFAULT_ADDRESS = 0
+
+    MERCHANT_PUBLIC_KEY_STR = "m_pkey"
+    MERCHANT_TYPE_STR = "m_type"
+    MERCHANT_COMODITY_STR = "m_item"
+    MERCHANT_PRICE_STR = "m_price"
+    MERCHANT_IP_STR = "m_nIP"
+    MERCHANT_PORT_STR = "m_nPort"
+    MERCHANT_TYPE_BUYER_STR = "Buyer"
+    MERCHANT_TYPE_SELLER_STR = "Seller"
     
     def __init__(self, server_ip, server_port, client_ip, client_port):
 
@@ -41,10 +50,10 @@ class Market:
 
         self.OrderBook.append(
             {
-                "m_type": merchant_type,
-                "m_pkey": merchant_public_key,
-                "m_item": comodity_to_sell,
-                "m_price": comodity_price
+                Market.MERCHANT_TYPE_STR: merchant_type,
+                Market.MERCHANT_PUBLIC_KEY_STR : merchant_public_key,
+                Market.MERCHANT_COMODITY_STR: comodity_to_sell,
+                Market.MERCHANT_PRICE_STR: comodity_price
             }
         )
     # EndFunction
@@ -55,7 +64,7 @@ class Market:
         index = 0
         for current_merchant in self.OrderBook:
 
-            if (current_merchant["m_pkey"] == merchant_public_key):
+            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
                 return index
             #EndIf
 
@@ -69,7 +78,7 @@ class Market:
     #
     def Check_if_Merchant_Exists_in_OrderBook(self, merchant_public_key):
         for current_merchant in self.OrderBook:
-            if (current_merchant["m_pkey"] == merchant_public_key):
+            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
                 return True
             #EndIf
         #EndFor
@@ -82,7 +91,7 @@ class Market:
     def Get_Merchant_Data_from_OrderBook(self, target_merchant_public_key):
         for current_merchant in self.OrderBook:
 
-            if (current_merchant["m_pkey"] == target_merchant_public_key):
+            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == target_merchant_public_key):
                 return current_merchant
             #EndIf
         #EndFor
@@ -108,9 +117,9 @@ class Market:
 
         self.ExistingMerchantList.append(
             {
-                "m_pkey" : merchant_public_key,
-                "m_nIP" : merchant_network_addr[0],
-                "m_nPort" : merchant_network_addr[1]
+                Market.MERCHANT_PUBLIC_KEY_STR : merchant_public_key,
+                Market.MERCHANT_IP_STR : merchant_network_addr[0],
+                Market.MERCHANT_PORT_STR : merchant_network_addr[1]
             }
         )
     #EndFunction
@@ -118,7 +127,7 @@ class Market:
     def Get_Merchant_Data_from_ExistingMerchants_List(self, merchant_public_key):
         for current_merchant in self.ExistingMerchantList:
 
-            if (current_merchant["m_pkey"] == merchant_public_key):
+            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
                 return current_merchant
             #EndIf
         #EndFor
@@ -132,7 +141,7 @@ class Market:
 
         for current_merchant in self.ExistingMerchantList:
 
-            if (current_merchant["m_pkey"] == merchant_public_key):
+            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
 
                 #Merchant found
                 return True
@@ -217,39 +226,39 @@ class Market:
             for internal_order_iterator in range(1, len(self.OrderBook)):
 
                 #If current Order type matches the other order type in the order list
-                if (external_order_iterator["m_item"] == self.OrderBook[internal_order_iterator]["m_item"]):
+                if (external_order_iterator[Market.MERCHANT_COMODITY_STR] == self.OrderBook[internal_order_iterator][Market.MERCHANT_COMODITY_STR]):
 
                     #If External Iterator is Buyer
-                    if (external_order_iterator["m_type"] == "Buyer"):
+                    if (external_order_iterator[Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_BUYER_STR):
 
                         #If Internal Iterator is a Buyer
-                        if (self.OrderBook[internal_order_iterator]["m_type"] == "Buyer"):
+                        if (self.OrderBook[internal_order_iterator][Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_BUYER_STR):
 
                             #Do nothing, its just a buyer vs buyer
                             pass
 
                         #If Internal Iterator is a Seller
-                        elif (self.OrderBook[internal_order_iterator]["m_type"] == "Seller"):
+                        elif (self.OrderBook[internal_order_iterator][Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_SELLER_STR):
 
                             #TXN if Buyer Price >= Seller
-                            if (external_order_iterator["m_price"] >= self.OrderBook[internal_order_iterator]["m_price"]):
-                                potential_TXNs.append((external_order_iterator["m_pkey"], self.OrderBook[internal_order_iterator]["m_pkey"]))
+                            if (external_order_iterator[Market.MERCHANT_PRICE_STR] >= self.OrderBook[internal_order_iterator][Market.MERCHANT_PRICE_STR]):
+                                potential_TXNs.append((external_order_iterator[Market.MERCHANT_PUBLIC_KEY_STR], self.OrderBook[internal_order_iterator][Market.MERCHANT_PUBLIC_KEY_STR]))
                             #EndIf
                         #EndIf
 
                     #If External Iterator is Seller
-                    elif (external_order_iterator["m_type"] == "Seller"):
+                    elif (external_order_iterator[Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_SELLER_STR):
 
                         #If Internal Iterator is a Buyer
-                        if (self.OrderBook[internal_order_iterator]["m_type"] == "Buyer"):
+                        if (self.OrderBook[internal_order_iterator][Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_BUYER_STR):
 
                             #TXN if Buyer Price >= Seller
-                            if (self.OrderBook[internal_order_iterator]["m_price"] >= external_order_iterator["m_price"]):
-                                potential_TXNs.append((external_order_iterator["m_pkey"], self.OrderBook[internal_order_iterator]["m_pkey"]))
+                            if (self.OrderBook[internal_order_iterator][Market.MERCHANT_PRICE_STR] >= external_order_iterator[Market.MERCHANT_PRICE_STR]):
+                                potential_TXNs.append((external_order_iterator[Market.MERCHANT_PUBLIC_KEY_STR], self.OrderBook[internal_order_iterator][Market.MERCHANT_PUBLIC_KEY_STR]))
                             #EndIf
                         
                         #If Internal Iterator is a Seller
-                        elif (self.OrderBook[internal_order_iterator]["m_type"] == "Seller"):
+                        elif (self.OrderBook[internal_order_iterator][Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_SELLER_STR):
 
                             #Do nothing, its just a Seller vs Seller
                             pass
@@ -262,8 +271,6 @@ class Market:
         #Return all possible TXNs
         return potential_TXNs
     # EndFunction    
-
-    
 
     #OK
     def Extract_Data_from_BlockChain_BlockData(self, target_block_data):
@@ -344,7 +351,7 @@ class Market:
         #EndIf
 
         #Send OrderBook
-        self.Send_OrderBook_to_Merchant((target_merchant["m_nIP"], target_merchant["m_nPort"]))
+        self.Send_OrderBook_to_Merchant((target_merchant[Market.MERCHANT_IP_STR], target_merchant[Market.MERCHANT_PORT_STR]))
     #EndFunction
 
     #SOCKET
@@ -402,7 +409,7 @@ class Market:
                 #EndIf
 
                 #Calculate Transfer Ammount
-                transfer_ammount = min(int(Buyer["m_price"]), int(Seller["m_price"]))
+                transfer_ammount = min(int(Buyer[Market.MERCHANT_PRICE_STR]), int(Seller[Market.MERCHANT_PRICE_STR]))
 
                 #Request Miner to add TXN in BlockChain
                 self.Request_Miner_to_Add_TXN_to_BlockChain(
@@ -513,10 +520,10 @@ class Market:
         index = 1
         for current_order in self.OrderBook:
             print("\nMerchant {}".format(index))
-            print("Merchant Type : {}".format(current_order["m_type"]))
-            print("Merchant Key  : {}".format(current_order["m_pkey"]))
-            print("Merchant Item : {}".format(current_order["m_item"]))
-            print("Merchant Price: {}".format(current_order["m_price"]))
+            print("Merchant Type : {}".format(current_order[Market.MERCHANT_TYPE_STR]))
+            print("Merchant Key  : {}".format(current_order[Market.MERCHANT_PUBLIC_KEY_STR]))
+            print("Merchant Item : {}".format(current_order[Market.MERCHANT_COMODITY_STR]))
+            print("Merchant Price: {}".format(current_order[Market.MERCHANT_PRICE_STR]))
 
             index += 1
         # EndFor
@@ -564,10 +571,10 @@ def main():
     server_port = 2600
     client_port = 2500
     market = Market(ip, server_port, ip, client_port)
-    market.Add_Merchant_To_OrderBook("Buyer", 1, "Chair", 50)
-    market.Add_Merchant_To_OrderBook("Seller", 2, "Chair", 40)
-    market.Add_Merchant_To_OrderBook("Buyer", 3, "Fan", 30)
-    market.Add_Merchant_To_OrderBook("Seller", 4, "Fan", 40)
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
     #market.Print_OrderBook()
     #market.Remove_From_OrderBook(4)
     #print("\n---------------------------")
