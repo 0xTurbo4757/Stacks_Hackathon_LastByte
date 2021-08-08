@@ -9,13 +9,15 @@ previousBlockHash = "0096793ff25a9219c8540e7ecd9a3fc02e6fdcb55ce4384c982b80adf3a
 
 # LOOP!
 
+
+
 # "PKEY,PKEY,PRICE"
 transactionSarib = "Sender2,Reciever2,Price2"
 
 # Creating A Block
 testNonce = 0
 blockdata = {}
-# We are creating a Genesis Block 
+# We are creating a Genesis Block
 # The CoinBase has the initial num
 if(blocknumber == 1):
     blockdata = {
@@ -23,9 +25,11 @@ if(blocknumber == 1):
                     "Previous Hash: ": "00000000",
                     "Data: ": transactionSarib,
                     "Nonce: ": testNonce,
-                    "CoinBase: ": "Initially 10000 coins are alloted to every new client that joins"
+                    "CoinBase: ": "Initially 1000 coins alloted to clients"
                 }
     }
+    print("Initiating The Genesis Block!")
+    print("ByteMarket BlockChain, Initiated & Active")
 else:
 # The Block Is Not a Genesis Block
     blockdata = {
@@ -64,9 +68,9 @@ with open("BlockChain.json", "r+") as file:
     data = json.load(file)
     #Appending to the BlockChain
     data.update(blockdata)
-    
+
     file.seek(0)
-    
+
     json.dump(data, file, indent = 4)
 
 blocknumber = blocknumber + 1
@@ -76,6 +80,8 @@ blocknumber = blocknumber + 1
 
 
 
-
-
+#
+# # Broadcast the updated ledger to the whole network
+#         for peer_address in self.peers_addresses:
+#             self.sock.sendto(ledger_to_send.encode("utf-8"), peer_address)
 
