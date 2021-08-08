@@ -2,6 +2,7 @@
 import socket
 import json
 from threading import Thread
+import ast
 
 class Market:
     #Constants
@@ -315,7 +316,7 @@ class Market:
         try:
             incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(Market.UDP_DATA_BUFFER_SIZE)
             Data = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
-            return ((Data, incomming_UDP_Data[0]))
+            return ((Data, incomming_UDP_Data[1]))
         except:
             return ("", "")
         #EndTry
@@ -326,7 +327,7 @@ class Market:
         try:
             incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(Market.UDP_DATA_BUFFER_SIZE)
             Data = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
-            return ((Data, incomming_UDP_Data[0]))
+            return ((Data, incomming_UDP_Data[1]))
         except:
             return ("", "")
         #EndTry
@@ -458,13 +459,20 @@ class Market:
 
             #If Merchant Expects Latest OrderBook, send it to them
             if (Data == Market.CLIENT_ORDERBOOK_REQUEST_STR):
+
+                print("Sending OrderBook {} to Client {}".format(self.OrderBook, Client_Address[1]))
                 self.Send_OrderBook_to_Merchant(Client_Address)
             else:
 
                 #We have received request to add something to orderbook
-                Merchant_OrderBook_Add_JSON = json.loads(json.dumps(Data))
+                print("json 1: {} t: {}".format(Data, type(Data)))
+                print("json 2: {} t: {}".format(json.loads(Data), type(json.loads(Data))))
+                #print("json 3: {} t: {}".format(json.loads(json.dumps(Data)), type(json.loads(json.dumps(Data)))))
+                
+                Merchant_OrderBook_Add_JSON = json.loads(Data)
 
                 print("\n\nData: {}\n\n".format(Merchant_OrderBook_Add_JSON))
+                print("json obj type: {}".format(type(Merchant_OrderBook_Add_JSON)))
 
                 #if Merchant doesnt Exists in ListOfUniqueMerchants
                 if (not(self.Check_if_Merchant_Exists_in_ExistingMerchant_List(Merchant_OrderBook_Add_JSON["pubkey"]))):
@@ -603,10 +611,10 @@ def main():
     client_port = 2500
     market = Market(ip, server_port, ip, client_port)
     
-    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
-    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
-    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
-    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
     #market.Print_OrderBook()
     #market.Remove_From_OrderBook(4)
     #print("\n---------------------------")
