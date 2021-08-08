@@ -4,6 +4,7 @@
 import hashFunction
 import socket
 import json
+import random
 
 class Client:
 
@@ -13,9 +14,9 @@ class Client:
         #self.ClientForMarket_Socket.bind(("localhost", 2600))
         self.ClientForMarket_Socket.connect(("127.0.0.1", 2600))
 
-        # Buyer or Seller
+        
         self.type = ""
-
+        self.username = username
 
         # Hash the username
         hashed_username = hashFunction.getSHA(username,5)
@@ -48,9 +49,10 @@ class Client:
         print("User Succesfully registered")
         f = open("clients.json","a")
 
-        (public_key_str,private_key_str) = hashFunction.rsa_genkey()
+        (public_key_str,private_key_str,self.pem) = hashFunction.rsa_genkey()
         self.pubkey = public_key_str
         self.privkey = private_key_str
+        self.pubkeyf = self.pem.public_key()
 
         entry = {'username': username,'pubkey':public_key_str,'privkey':private_key_str ,'type':self.type ,'hashed_username':hashed_username}
 
@@ -75,7 +77,20 @@ def foo():
 def sell():
     item = str(input("Item name : "))
     price = str(input("Price for selling : "))
-    data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type}
+    #Create signature#############################
+    n= str(random.randint(1,1000))
+    n=c1.username+n
+    hashh = hashFunction.getSHA(n,5)
+
+    sign = hashFunction.generate_signature(hashh,c1.pem)
+
+    if (hashFunction.verify_signature(sign,hashh,c1.pubkeyf)):
+        print("Signature Verified from public key")
+    else:
+        print("Cannot Verify")
+
+    ##########################################
+    data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type,'hash':hashh}
     data = str(data)
     data = data.encode("utf-8")
 
@@ -85,6 +100,21 @@ def sell():
 def buy():
     item = str(input("Item name : "))
     price = str(input("Price for buying : "))
+    #Create signature#############################
+    n= str(random.randint(1,1000))
+    n=c1.username+n
+    hashh = hashFunction.getSHA(n,5)
+
+    sign = hashFunction.generate_signature(hashh,c1.pem)
+
+    if (hashFunction.verify_signature(sign,hashh,c1.pubkeyf)):
+        print("Signature Verified from public key")
+    else:
+        print("Cannot Verify")
+
+    ##########################################
+
+
     data = {'item': item,'price':price , 'pubkey':c1.pubkey,'type':c1.type}
     data = str(data)
     data = data.encode("utf-8")
