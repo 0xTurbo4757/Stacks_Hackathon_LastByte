@@ -357,8 +357,9 @@ class Market:
     #SOCKET
     #TXN Data tuple: (SENDER, RECEIVER, AMOUNT)
     def Request_Miner_to_Add_TXN_to_BlockChain(self, TXN_Data):
-        #Generate Request for miner: SENDER, RECEIVER, AMOUNT
-        request_to_send_miner = str(TXN_Data[0])
+        #Generate Request for miner: "TXN:SENDER,RECEIVER,AMOUNT"
+        request_to_send_miner = "TXN:"
+        request_to_send_miner += str(TXN_Data[0])
         request_to_send_miner += ","
         request_to_send_miner += str(TXN_Data[1])
         request_to_send_miner += ","
@@ -451,7 +452,7 @@ class Market:
             else:
 
                 #We have received request to add something to orderbook
-                Merchant_OrderBook_Add_JSON = json.loads(Data)
+                Merchant_OrderBook_Add_JSON = json.loads(json.dump(Data))
 
                 #if Merchant doesnt Exists in ListOfUniqueMerchants
                 if (not(self.Check_if_Merchant_Exists_in_ExistingMerchant_List(Merchant_OrderBook_Add_JSON["pubkey"]))):
@@ -573,7 +574,7 @@ class Market:
 def main():
     ip = "localhost"
     server_port = 2600
-    client_port = 2500
+    client_port = 2501
     market = Market(ip, server_port, ip, client_port)
     market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
     market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
