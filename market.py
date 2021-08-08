@@ -3,6 +3,10 @@ import socket
 import json
 
 class Market:
+    #Constants
+    MINER_BLOCKCHAIN_REQUEST_STR = "chain"
+    DATA_ENCODING_FORMAT = "utf-8"
+    
     def __init__(self, server_ip, server_port, client_ip, client_port):
 
         # Socket Handling As Server For client.py
@@ -221,17 +225,6 @@ class Market:
         self.Send_Data_to_Miner(request_to_send_miner, self.ClientForMiner_SocketAddr)
     #EndFunction
 
-    #
-    def Send_Data_to_Miner(self, data_to_send, miner_addr):
-        self.ClientForMiner_Socket.sendto(data_to_send.encode("utf-8"), miner_addr)
-    #EndFunction
-
-    #OK
-    #Returns True or False
-    def Verify_Merchant_has_Enough_Balance(self, merchant_public_key):
-        return (self.Get_Merchant_Current_Balance(merchant_public_key) >= 0)
-    #EndFunction
-
     #OK
     # Iterates through Blockchain to get latest Balance of the merchant
     def Get_Merchant_Current_Balance(self, merchant_public_key):
@@ -278,11 +271,11 @@ class Market:
         #Return net balance
         return net_merchant_balance
     # EndFunction
-
-    #SOCKET
-    #Send OrderBook to the Merchant requesting it
-    def Send_OrderBook_to_Merchant(self, merchant_public_key):
-        pass
+    
+    #OK
+    #Returns True or False
+    def Verify_Merchant_has_Enough_Balance(self, merchant_public_key):
+        return (self.Get_Merchant_Current_Balance(merchant_public_key) >= 0)
     #EndFunction
     
     #OK
@@ -316,7 +309,7 @@ class Market:
     #EndFunction
 
     #
-    def Add_Merchant_to_Existing_List(self, merchant_public_key, merchant_network_addr):
+    def Add_Merchant_to_ExistingMerchants_List(self, merchant_public_key, merchant_network_addr):
 
         self.ExistingMerchantList.append(
             {
@@ -327,8 +320,20 @@ class Market:
         )
     #EndFunction
 
+    def Get_Merchant_Data_from_ExistingMerchants_List(self, merchant_public_key):
+        for current_merchant in self.ExistingMerchantList:
+
+            if (current_merchant["m_pkey"] == merchant_public_key):
+                return current_merchant
+            #EndIf
+        #EndFor
+
+        #Return a None to tell data not found
+        return None
+    #EndFunction
+
     #
-    def Check_if_Merchant_Exists_in_Existing_List(self, merchant_public_key):
+    def Check_if_Merchant_Exists_in_ExistingMerchant_List(self, merchant_public_key):
 
         for current_merchant in self.ExistingMerchantList:
 
@@ -341,6 +346,41 @@ class Market:
 
         #Did not find merchant in list
         return False
+    #EndFunction
+
+    #SOCKET
+    def Send_Data_to_Merchant(self, data_to_send, merchant_addr):
+        self.ServerForClient_Socket.sendto(data_to_send.encode(Market.DATA_ENCODING_FORMAT), merchant_addr)
+    #EndFunction
+
+    #SOCKET
+    def Send_Data_to_Miner(self, data_to_send, miner_addr):
+        self.ClientForMiner_Socket.sendto(data_to_send.encode(Market.DATA_ENCODING_FORMAT), miner_addr)
+    #EndFunction
+
+    #SOCKET
+    #Send OrderBook to the Merchant requesting it
+    def Send_OrderBook_to_Merchant(self, merchant_public_key):
+        target_merchant = self.Get_Merchant_Data_from_ExistingMerchants_List(merchant_public_key)
+
+        if (target_merchant == None):
+            return
+        #EndIf
+
+        self.Send_Data_to_Merchant(
+            #OrderBook
+            str(self.OrderBook),
+            #Address Tuple
+            (
+                target_merchant["m_nIP"],
+                target_merchant["m_nPort"]
+            )
+        )
+    #EndFunction
+
+    #SOCKET
+    def Request_Latest_BlockChain_from_Miner(self, miner_addr):
+        self.Send_Data_to_Miner(Market.MINER_BLOCKCHAIN_REQUEST_STR, miner_addr)
     #EndFunction
 
     #OK
@@ -359,7 +399,7 @@ class Market:
         while True:
             try:
                 incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(8192)
-                Data = incomming_UDP_Data[0].decode("utf-8")
+                Data = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
                 if (len(Data)):
                     print("Data: {}".format(Data))
                     print("Addr: {}".format(incomming_UDP_Data[1]))
@@ -373,13 +413,13 @@ class Market:
     def Handle_Incoming_BlockChain_from_Miner_THREADED(self):
         while True:
             incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(8192)
-            BlockChain_Data_RAW = incomming_UDP_Data[0].decode("utf-8")
+            BlockChain_Data_RAW = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
             Updated_BlockChain = json.loads(BlockChain_Data_RAW)
             self.Update_Current_BlockChain(Updated_BlockChain)
         #EndWhile
     #EndFunction
 
-        #OK
+    #OK
     def Print_OrderBook(self):
 
         if (len(self.OrderBook) == 0):
@@ -412,7 +452,7 @@ class Market:
         self.Print_JSON_Object(self.BlockChain)
         print("BlockChain Size: {}".format(self.Get_BlockChain_Size()))
     #EndFunction
-
+0
     #
     def RunMarket(self):    
 
