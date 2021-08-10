@@ -14,6 +14,7 @@ class Market:
     MINER_DEFAULT_ADDRESS = 0
 
     MERCHANT_PUBLIC_KEY_STR = "m_pkey"
+    MERCHANT_SIGNATURE_STR = "m_sign"
     MERCHANT_TYPE_STR = "m_type"
     MERCHANT_COMODITY_STR = "m_item"
     MERCHANT_PRICE_STR = "m_price"
@@ -392,6 +393,16 @@ class Market:
         self.BlockChain = new_block_chain
     #EndFunction
 
+    def Request_Miner_to_give_New_Merchant_Funds(self, merchant_public_key):
+        self.Request_Miner_to_Add_TXN_to_BlockChain(
+            (
+                Market.MINER_DEFAULT_ADDRESS,
+                merchant_public_key,
+                Market.NEW_MERCHANT_FUND_AMOUNT
+            )
+        )
+    #EndFunction
+
     # ----------------------------- HANDLERS -----------------------------
     #OK
     def Handle_All_Potential_TXNs_within_OrderBook(self):
@@ -470,7 +481,13 @@ class Market:
                 #print("json 3: {} t: {}".format(json.loads(json.dumps(Data)), type(json.loads(json.dumps(Data)))))
                 
                 #print("Data was: \n{}\n of type: \n{}".format(Data, type(Data)))
-                Merchant_OrderBook_Add_JSON = json.loads(Data)
+                try:
+                    Merchant_OrderBook_Add_JSON = json.loads(Data)
+                except Exception as e:
+                    print("JSON Decoder couldnt Parse Request {}\nError: {}".format(Data, e))
+                    print("Request Ignored :(")
+                    return
+                #EndTry
                 #print("JSON was: \n{}\n of type: \n{}".format(Merchant_OrderBook_Add_JSON, type(Merchant_OrderBook_Add_JSON)))
 
                 #print("\n\nData: {}\n\n".format(Merchant_OrderBook_Add_JSON))
@@ -486,13 +503,7 @@ class Market:
                     )
 
                     #Request Miner to give new merchant funds
-                    self.Request_Miner_to_Add_TXN_to_BlockChain(
-                        (
-                            Market.MINER_DEFAULT_ADDRESS,
-                            Merchant_OrderBook_Add_JSON["pubkey"],
-                            Market.NEW_MERCHANT_FUND_AMOUNT
-                        )
-                    )
+                    self.Request_Miner_to_give_New_Merchant_Funds(Merchant_OrderBook_Add_JSON["pubkey"])
                     
                 #This isnt a new merchant
                 else:
@@ -523,7 +534,7 @@ class Market:
             if (len(BlockChain_Data_RAW)):
                 #print("Received BlockChain {}".format(BlockChain_Data_RAW))
                 Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
-                print("Received BlockChain:\n")
+                print("Received BlockChain:")
                 self.Print_JSON_Object(Updated_BlockChain)
                 self.Update_Current_BlockChain(Updated_BlockChain)
             #EndIf
@@ -617,6 +628,10 @@ def main():
     #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
     #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
     #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
+
+    #market.Request_Miner_to_give_New_Merchant_Funds("1")
+    #market.Request_Miner_to_give_New_Merchant_Funds("2")
+
     #market.Print_OrderBook()
     #market.Remove_From_OrderBook(4)
     #print("\n---------------------------")

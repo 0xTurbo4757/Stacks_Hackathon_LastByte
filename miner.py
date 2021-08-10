@@ -101,9 +101,10 @@ class Miner:
         Client_Address = incomming_UDP_Data[1]
 
         if (len(Data)):
-            print("\nReceived Data: {}".format(Data))
+            print("\nReceived: '{}' from 'localhost:{}'".format(Data, Client_Address[1]))
             #If Client Expects Latest BlockChain, send it to them
             if (Data == Miner.MINER_BLOCKCHAIN_REQUEST_STR):
+                print("\nSending: '{}' to 'localhost:{}'".format("BlockChain", Client_Address[1]))
                 self.ServerForClient_Socket.sendto(str(self.Entire_BlockChain).encode(Miner.DATA_ENCODING_FORMAT), Client_Address)
             #Market sent TXN Request
             elif (Data[0:3] == "TXN"):
@@ -111,11 +112,10 @@ class Miner:
                 self.Market_Address = Client_Address
                 #Get TXN Request
                 self.transactionSarib = Data[4:]
-                print("Got TXN Request: {}".format(self.transactionSarib))
+                print("\nGot TXN Request: {} from 'localhost:{}'".format(self.transactionSarib, Client_Address[1]))
                 #Initiate Mining
 
-
-                print("transactionSarib was {}".format(self.transactionSarib))
+                #print("transactionSarib was {}".format(self.transactionSarib))
                 self.Update_BlockChain()
             #EndIf
         #EndIf
