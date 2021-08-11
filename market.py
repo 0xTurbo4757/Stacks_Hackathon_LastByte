@@ -6,22 +6,26 @@ import ast
 
 class Market:
     #Constants
-    MINER_BLOCKCHAIN_REQUEST_STR = "chain"
-    CLIENT_ORDERBOOK_REQUEST_STR = "order"
-    DATA_ENCODING_FORMAT = "utf-8"
-    UDP_DATA_BUFFER_SIZE = 8192
-    NEW_MERCHANT_FUND_AMOUNT = 100
-    MINER_DEFAULT_ADDRESS = 0
+    MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
+    CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
+    DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
+    UDP_DATA_BUFFER_SIZE = 8192                                 #UDP Incomming data buffer size
+    NEW_MERCHANT_FUND_AMOUNT = 100                              #Funds given to new merchants
+    MINER_DEFAULT_ADDRESS = 0                                   #Default miner address
 
-    MERCHANT_PUBLIC_KEY_STR = "m_pkey"
-    MERCHANT_SIGNATURE_STR = "m_sign"
-    MERCHANT_TYPE_STR = "m_type"
-    MERCHANT_COMODITY_STR = "m_item"
-    MERCHANT_PRICE_STR = "m_price"
-    MERCHANT_IP_STR = "m_nIP"
-    MERCHANT_PORT_STR = "m_nPort"
-    MERCHANT_TYPE_BUYER_STR = "Buyer"
-    MERCHANT_TYPE_SELLER_STR = "Seller"
+    USERDATABASE_FILE_NAME = "clients.json"                     #Filename of UserDataBase file
+    
+    MERCHANT_USERNAME_STR = "m_Username"                        #JSON KEY: Merchant User Name
+    MERCHANT_HASHED_USERNAME_STR = "m_HashedUsername"           #JSON KEY: Merchant Hashed User Name
+    MERCHANT_PRIVATE_KEY_STR = "m_PrivKey"                      #JSON KEY: Merchant Private Key
+    MERCHANT_PUBLIC_KEY_STR = "m_PubKey"                        #JSON KEY: Merchant Public Key
+    MERCHANT_SIGNATURE_STR = "m_Sign"                           #JSON KEY: Merchant Signature
+    MERCHANT_TYPE_STR = "m_Type"                                #JSON KEY: Merchant Type
+    MERCHANT_COMODITY_STR = "m_Item"                            #JSON KEY: Merchant Item to sell/buy
+    MERCHANT_PRICE_STR = "m_Price"                              #JSON KEY: Merchant Item Price
+    MERCHANT_TYPE_BUYER_STR = "B"                               #JSON VAL: Merchant Type: Buyer
+    MERCHANT_TYPE_SELLER_STR = "S"                              #JSON VAL: Merchant Type: Seller
+
     
     def __init__(self, server_ip, server_port, client_ip, client_port):
 
@@ -534,7 +538,7 @@ class Market:
             if (len(BlockChain_Data_RAW)):
                 #print("Received BlockChain {}".format(BlockChain_Data_RAW))
                 Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
-                print("Received BlockChain:")
+                print("\nReceived BlockChain:")
                 self.Print_JSON_Object(Updated_BlockChain)
                 self.Update_Current_BlockChain(Updated_BlockChain)
             #EndIf
@@ -624,13 +628,13 @@ def main():
     client_port = 2500
     market = Market(ip, server_port, ip, client_port)
     
-    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
-    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
     #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
     #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
 
-    #market.Request_Miner_to_give_New_Merchant_Funds("1")
-    #market.Request_Miner_to_give_New_Merchant_Funds("2")
+    market.Request_Miner_to_give_New_Merchant_Funds("1")
+    market.Request_Miner_to_give_New_Merchant_Funds("2")
 
     #market.Print_OrderBook()
     #market.Remove_From_OrderBook(4)
@@ -653,5 +657,10 @@ def main():
 # EndMain
 
 if __name__ == "__main__":
-    main()
-# EndIf
+    try:
+        main()
+    except (KeyboardInterrupt, SystemExit):
+        print("\n\nExiting Market\nGoodBye!\n")
+        exit()
+    #EndTry
+#EndIf

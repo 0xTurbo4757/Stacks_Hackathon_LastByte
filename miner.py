@@ -11,12 +11,23 @@ class Miner:
     UDP_DATA_BUFFER_SIZE = 8192
     NEW_MERCHANT_FUND_AMOUNT = 100
 
+    MINER_MINING_DIFFICULTY_LEVEL = 3
+
+    MINER_BLOCKCHAIN_PREVIOUS_HASH_STR = "PrevHash"
+    MINER_BLOCKCHAIN_DATA_STR = "Data"
+    MINER_BLOCKCHAIN_NONCE_STR = "Nonce"
+    MINER_BLOCKCHAIN_COINBASE_STR = "CoinBase"
+
+    MINER_BLOCKCHAIN_GENESIS_PREV_HASH = "00000000000000000000000000000000000000000000000000000000000000000"
+
     def __init__(self, server_ip, server_port):
         self.blocknumber = 1
-        self.previousBlockHash = "00000000000000000000000000000000000000000000000000000000000000000"
+        self.previousBlockHash = Miner.MINER_BLOCKCHAIN_GENESIS_PREV_HASH
         self.transactionSarib = "Sender2,Reciever2,Price2"
-        self.blockdata = {}
-        self.Entire_BlockChain = {}
+        
+        #Final BlockChain to send to everyone
+        self.Entire_BlockChain = []
+        self.Mining_Difficulty_Level = Miner.MINER_MINING_DIFFICULTY_LEVEL
 
         # Socket Handling As Server For market.py & client.py
         self.ServerForClient_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -24,49 +35,57 @@ class Miner:
         self.Market_Address = ()
     #EndFunction
 
-    def Update_BlockChain(self):
-        # LOOP!
-        # "PKEY,PKEY,PRICE"
+    def Check_if_Correct_Hash_Found_by_Difficulty_Level(self, target_hash, target_zeros):
+        try:
+            target_hash_found = (int(target_hash[0:target_zeros]) == 0)
+        except:
+            target_hash_found = False
+        #EndTry
+        return target_hash_found
+    #EndIf
 
+    def Update_BlockChain(self):
         # Creating A Block
         testNonce = 0
-        self.blockdata = {}
+        blockdata = {}
+
         # We are creating a Genesis Block
         # The CoinBase has the initial num
         if(self.blocknumber == 1):
-            self.blockdata = {
+            blockdata = {
                 self.blocknumber: {
-                    "Previous Hash: ": "00000000",
-                    "Data: ": self.transactionSarib,
-                    "Nonce: ": testNonce,
-                    "CoinBase: ": "Initially 1000 coins alloted to clients"
+                    Miner.MINER_BLOCKCHAIN_PREVIOUS_HASH_STR : self.previousBlockHash,
+                    Miner.MINER_BLOCKCHAIN_DATA_STR : self.transactionSarib,
+                    Miner.MINER_BLOCKCHAIN_NONCE_STR : testNonce,
+                    Miner.MINER_BLOCKCHAIN_COINBASE_STR : "Initially %s coins allotted to new client" % Miner.NEW_MERCHANT_FUND_AMOUNT
                 }
             }
-            print("Initiating The Genesis Block!")
-            print("ByteMarket BlockChain, Initiated & Active")
+            print("\nInitiating The Genesis Block!")
+            print("ByteMarket BlockChain, Initiated & Active\n")
         else:
             # The Block Is Not a Genesis Block
-            self.blockdata = {
+            blockdata = {
                 self.blocknumber: {
-                    "Previous Hash: ": self.previousBlockHash,
-                    "Data: ": self.transactionSarib,
-                    "Nonce: ": testNonce
+                    Miner.MINER_BLOCKCHAIN_PREVIOUS_HASH_STR : self.previousBlockHash,
+                    Miner.MINER_BLOCKCHAIN_DATA_STR : self.transactionSarib,
+                    Miner.MINER_BLOCKCHAIN_NONCE_STR : testNonce
                 }
             }
+        #EndIf
 
         # MINING THE BLOCK
-        currentBlockHash = hashFunction.hash_object(self.blockdata)
+        currentBlockHash = hashFunction.hash_object(blockdata)
         # self.blocknumber = self.blocknumber + 1
         # Our Proof Of Work Is Based on Finding the Nonce for which the first two digits of the BlockHash are 0
         # CONSENSUS IMPLEMENTED
         # Implementing Proof Of WORK
         print("Mining The Block to Find the Correct Nonce!")
-        while((currentBlockHash[0] != "0") or (currentBlockHash[1] != "0")):
+        while(not(self.Check_if_Correct_Hash_Found_by_Difficulty_Level(currentBlockHash, self.Mining_Difficulty_Level))):   
             # Finding CORRECT NONCE
             testNonce = testNonce + 1
             # Starting from a testNonce and WORKING to find the nonce giving the first two digits of SHA As 0
-            self.blockdata[self.blocknumber]['Nonce: '] = testNonce
-            currentBlockHash = hashFunction.hash_object(self.blockdata)
+            blockdata[self.blocknumber][Miner.MINER_BLOCKCHAIN_NONCE_STR] = testNonce
+            currentBlockHash = hashFunction.hash_object(blockdata)
         print("The Block Is Mined, Adding the Block to the Central Ledger")
         print(currentBlockHash)
         # THE BLOCK IS NOW MINED
@@ -76,12 +95,12 @@ class Miner:
         # ADDING THE BLOCK TO THE CENTRAL LEDGER // BlockChain - WHICH IS A JSON HERE
 
         # Serializing json
-        json_object = json.dumps(self.blockdata, indent=4)
+        json_object = json.dumps(blockdata, indent=4)
         # Writing to sample.json
         with open("BlockChain.json", "r+") as file:
             data = json.load(file)
             # Appending to the BlockChain
-            data.update(self.blockdata)
+            data.update(blockdata)
             file.seek(0)
             json.dump(data, file, indent=4)
 
@@ -142,5 +161,10 @@ def main():
 # EndMain
 
 if __name__ == "__main__":
-    main()
-# EndIf
+    try:
+        main()
+    except (KeyboardInterrupt, SystemExit):
+        print("\n\nExiting Miner\nGoodBye!\n")
+        exit()
+    #EndTry
+#EndIf

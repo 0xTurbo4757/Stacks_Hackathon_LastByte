@@ -1,31 +1,31 @@
 import hashFunction
 import socket
 import json
-import random
+import sys
 import time
 from threading import Thread
 from os import system
 
 class Client:
-    MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #
-    CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #
-    DATA_ENCODING_FORMAT = "utf-8"                              #
-    UDP_DATA_BUFFER_SIZE = 8192                                 #
-    NEW_MERCHANT_FUND_AMOUNT = 100                              #
-    MINER_DEFAULT_ADDRESS = 0                                   #
+    MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
+    CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
+    DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
+    UDP_DATA_BUFFER_SIZE = 8192                                 #UDP Incomming data buffer size
+    NEW_MERCHANT_FUND_AMOUNT = 100                              #Funds given to new merchants
+    MINER_DEFAULT_ADDRESS = 0                                   #Default miner address
 
-    USERDATABASE_FILE_NAME = "clients.json"                     #
+    USERDATABASE_FILE_NAME = "clients.json"                     #Filename of UserDataBase file
     
-    MERCHANT_USERNAME_STR = "m_Username"                        #
-    MERCHANT_HASHED_USERNAME_STR = "m_HashedUsername"           #
-    MERCHANT_PRIVATE_KEY_STR = "m_PrivKey"                      #
-    MERCHANT_PUBLIC_KEY_STR = "m_PubKey"                        #
-    MERCHANT_SIGNATURE_STR = "m_Sign"                           #
-    MERCHANT_TYPE_STR = "m_Type"                                #
-    MERCHANT_COMODITY_STR = "m_Item"                            #
-    MERCHANT_PRICE_STR = "m_Price"                              #
-    MERCHANT_TYPE_BUYER_STR = "B"                               #
-    MERCHANT_TYPE_SELLER_STR = "S"                              #
+    MERCHANT_USERNAME_STR = "m_Username"                        #JSON KEY: Merchant User Name
+    MERCHANT_HASHED_USERNAME_STR = "m_HashedUsername"           #JSON KEY: Merchant Hashed User Name
+    MERCHANT_PRIVATE_KEY_STR = "m_PrivKey"                      #JSON KEY: Merchant Private Key
+    MERCHANT_PUBLIC_KEY_STR = "m_PubKey"                        #JSON KEY: Merchant Public Key
+    MERCHANT_SIGNATURE_STR = "m_Sign"                           #JSON KEY: Merchant Signature
+    MERCHANT_TYPE_STR = "m_Type"                                #JSON KEY: Merchant Type
+    MERCHANT_COMODITY_STR = "m_Item"                            #JSON KEY: Merchant Item to sell/buy
+    MERCHANT_PRICE_STR = "m_Price"                              #JSON KEY: Merchant Item Price
+    MERCHANT_TYPE_BUYER_STR = "B"                               #JSON VAL: Merchant Type: Buyer
+    MERCHANT_TYPE_SELLER_STR = "S"                              #JSON VAL: Merchant Type: Seller
 
     def __init__(self, market_ip, market_port, miner_ip, miner_port):
 
@@ -89,6 +89,13 @@ class Client:
         balance_given_to_merchant = 0
         balance_taken_from_merchant = 0
         net_merchant_balance = 0
+
+        print("\n[INFO]: Current BlockChain is {}\n\n Its Size is: {}\n".format(self.BlockChain, len(self.BlockChain)))
+
+        if (self.Get_BlockChain_Size() == 0):
+            print("\n[INFO]: You haven't been assigned initial funds from the miner\n")
+            return 0
+        #EndIf
         
         #Iterate thru entire chain for balance given to merchant
         for current_block_iterator in range(1, (self.Get_BlockChain_Size() + 1)):
@@ -195,16 +202,44 @@ class Client:
     #EndFunction
     # ----------------------------- SOCKET -----------------------------
 
-    def ClearScreen(self):
+    # ----------------------------- CONSOLE -----------------------------
+    def Console_ClearScreen(self):
         system("cls")
     #EndFunction
 
-    def Pause(self):
+    def Console_Pause(self):
+        print("\n")
         system("pause")
     #EndFunction
 
+    def Console_Delay(self, time_s):
+        time.sleep(time_s)
+    #EndFunction
+    # ----------------------------- CONSOLE -----------------------------
+
     # ----------------------------- HANDLERS -----------------------------
-    #
+    def Handle_New_User(self):
+        #Get Current User name
+        self.Current_Client_Username = self.Get_Valid_Username_from_User()
+        
+        #Get Current User type
+        self.Current_Client_Type = self.Get_Valid_UserType_from_User()
+
+        #Generate User's Public & Private Key
+        self.Generate_User_RSA_Keys()
+        
+        #Save all current Client details into UserDataBase
+        self.Update_UserDataBase_File()
+
+        print("\nUser Succesfully Registered!\n")
+
+        self.Console_Delay(1)
+    #EndFunction
+
+    def Handle_Market_Buy_Sell_Operation(self):
+        self.Send_Data_to_Market(self.Get_Signed_Request_Message_for_Market())
+    #EndFunction
+
     def Handle_Main_Menu(self):
         while True:
 
@@ -212,10 +247,10 @@ class Client:
             #Received BlockChain asynchronously updated using threads
             self.Request_Latest_BlockChain_from_Miner()
 
-            self.ClearScreen()
+            self.Console_ClearScreen()
 
             # Menu 
-            print("Commands")
+            print("       Main Menu\n")
             print("1. View Current balance")
             if (self.Current_Client_Type == "S"):
                 print("2. Sell something")
@@ -230,18 +265,18 @@ class Client:
             print("8. Exit")
 
             try:
-                UserInput_Choice = int(input())
+                UserInput_Choice = int(input("\nEnter Choice Here: "))
             except:
                 print("Please input only integers!")
-                time.sleep(2)
-                self.ClearScreen()
+                self.Console_Delay(2)
+                self.Console_ClearScreen()
                 continue
             #EndTry
 
             if (UserInput_Choice == 1):
                 print(self.Get_Merchant_Current_Balance(self.Current_Client_Public_Key))
             if (UserInput_Choice == 2):
-                self.Handle_Operation_Sell()
+                self.Handle_Market_Buy_Sell_Operation()
             if (UserInput_Choice == 3):
                 self.Request_Latest_OrderBook_from_Market()
                 self.Print_OrderBook()
@@ -250,7 +285,7 @@ class Client:
             if (UserInput_Choice == 5):
                 print(self.Current_Client_Private_Key)
             if (UserInput_Choice == 6):
-                self.ClearScreen()
+                self.Console_ClearScreen()
                 continue
             if (UserInput_Choice == 7):
                 break
@@ -258,26 +293,17 @@ class Client:
                 exit()
             #EndIf
 
-            self.Pause()
+            self.Console_Pause()
         #EndWhile
     #EndFunction
 
-    def Handle_Operation_Sell(self):
-        self.Send_Data_to_Market(self.Get_Signed_Request_Message_for_Market())
-    #EndFunction
-
-    def Handle_Operation_Buy(self):
-        self.Send_Data_to_Market(self.Get_Signed_Buy_Request_Message_for_Market())
-    #EndFunction
-
-    #
     def Handle_Incoming_BlockChain_from_Miner_THREADED(self):
         while True:
             BlockChain_Data_RAW, Miner_Address = self.Get_Data_from_Miner()
             if (len(BlockChain_Data_RAW)):
                 #print("Received BlockChain {}".format(BlockChain_Data_RAW))
                 Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
-                print("Received BlockChain:")
+                print("\nReceived BlockChain:")
                 self.Print_JSON_Object(Updated_BlockChain)
                 self.Update_Current_BlockChain(Updated_BlockChain)
             #EndIf
@@ -325,6 +351,7 @@ class Client:
         print("BlockChain Size: {}".format(self.Get_BlockChain_Size()))
     #EndFunction
     # ----------------------------- MISC -----------------------------
+
     #
     def Get_Hashed_Username(self, target_username):
         return hashFunction.getSHA(target_username, 5)
@@ -333,16 +360,37 @@ class Client:
     #Re-Written!
     def Get_Valid_Username_from_User(self):
         final_username = ""                 #Valid Username
-        valid_username_found = True         #Found Flag
 
-        #Open User DataBase File
-        UserDataBaseFile = open(Client.USERDATABASE_FILE_NAME, "r")
+        #Try to Open User DataBase File
+        try:
+            UserDataBaseFile = open(Client.USERDATABASE_FILE_NAME, "r")
+        except (FileNotFoundError):
+            #No File exists
+            print("\n[INFO]: UserDataBase file '{}' doesnt exist!\nMaking a new one...\n".format(Client.USERDATABASE_FILE_NAME))
+
+            #Create the file
+            NEW_UserDataBaseFile = open(Client.USERDATABASE_FILE_NAME, "w")
+            #Close it immediately because we dont want to write any data to it
+            NEW_UserDataBaseFile.close()
+
+            #Try opening the file again
+            try:
+                UserDataBaseFile = open(Client.USERDATABASE_FILE_NAME, "r")
+            except Exception as e:
+                #This shouldnt have happened
+                print("\n[ERROR]: {} Attempted to create UserDataBase file '{}' failed!!\nExact Error: {}\nExiting\n".format(Client.USERDATABASE_FILE_NAME, e))
+                #We cant continue, we needa die :(
+                exit()
+            #EndTry
+        #EndTry
 
         #Keep inputting from user until valid username is obtained
         while True:
+            #Found Flag
+            valid_username_found = True         
 
             #Get Username from user
-            final_username = str(input("Enter Your Name Here: "))
+            final_username = str(input("\nEnter Your Name Here: "))
 
             #Get Hash of the target Username
             target_hashed_username = self.Get_Hashed_Username(final_username)
@@ -350,7 +398,7 @@ class Client:
             #Iterate through database to check if username already exists
             for current_line in UserDataBaseFile:
                 current_user_entry_JSON = json.loads(current_line)
-                if current_user_entry_JSON["hashed_username"] == target_hashed_username:
+                if current_user_entry_JSON[Client.MERCHANT_HASHED_USERNAME_STR] == target_hashed_username:
                     valid_username_found = False
                     break
                 #EndIf
@@ -363,7 +411,7 @@ class Client:
                 #GTFO!
                 break
             else:
-                print("[ERROR]: Can't use this Username! - \nAlready exists (Public key clash)\nPlease Choose another Username\n")
+                print("\n[ERROR]: Can't use this Username!\nAlready exists (Public key clash)\nPlease Choose another Username\n")
             #EndIf
         #EndWhile
 
@@ -376,11 +424,11 @@ class Client:
 
     #Re-Written!
     def Get_Valid_UserType_from_User(self):
-        input_usertype = str(input("Write 'B' for buyer, 'S' for seller :"))
+        input_usertype = str(input("\nEnter 'B' if you're a Buyer or 'S' if a Seller: "))
         
         while (input_usertype != "B" and input_usertype != "S"):
-            print("Error write only 'B' or 'S'")
-            input_usertype = str(input("Write 'B' for buyer, 'S' for seller :"))
+            print("\n[ERROR]: Enter 'B' or 'S' only!")
+            input_usertype = str(input("\nEnter 'B' if you're a Buyer or 'S' if a Seller: "))
         #EndWhile
 
         #Return UserType
@@ -398,7 +446,7 @@ class Client:
 
         Database_Entry = {
             Client.MERCHANT_USERNAME_STR : self.Current_Client_Username,
-            Client.Current_Client_HashedUsername : self.Current_Client_HashedUsername,
+            Client.MERCHANT_HASHED_USERNAME_STR : self.Current_Client_HashedUsername,
             Client.MERCHANT_PUBLIC_KEY_STR : self.Current_Client_Public_Key,
             Client.MERCHANT_PRIVATE_KEY_STR : self.Current_Client_Private_Key,
             Client.MERCHANT_TYPE_STR : self.Current_Client_Type,
@@ -412,8 +460,6 @@ class Client:
 
         #Save file & close
         UserDataBaseFile.close()
-
-        print("User Succesfully registered")
     #EndFunction
 
     def Get_Digital_Signature_using_PrivateKey(self, target_message):
@@ -432,20 +478,6 @@ class Client:
             print("Cannot Verify")
             return False
         #EndIf
-    #EndFunction
-
-    def Handle_New_User(self):
-        #Get Current User name
-        self.Current_Client_Username = self.Get_Valid_Username_from_User()
-        
-        #Get Current User type
-        self.Current_Client_Type = self.Get_Valid_UserType_from_User()
-
-        #Generate User's Public & Private Key
-        self.Generate_User_RSA_Keys()
-        
-        #Save all current Client details into UserDataBase
-        self.Update_UserDataBase_File()
     #EndFunction
 
     def Get_Signed_Request_Message_for_Market(self):
@@ -502,8 +534,13 @@ def main():
 
     #Run The Client
     client.RunClient()
-# EndMain
+#EndMain
 
 if __name__ == "__main__":
-    main()
-# EndIf
+    try:
+        main()
+    except (KeyboardInterrupt, SystemExit):
+        print("\n\nExiting Client\nGoodBye!\n")
+        exit()
+    #EndTry
+#EndIf
