@@ -7,22 +7,25 @@ from threading import Thread
 from os import system
 
 class Client:
-    MINER_BLOCKCHAIN_REQUEST_STR = "chain"
-    CLIENT_ORDERBOOK_REQUEST_STR = "order"
-    DATA_ENCODING_FORMAT = "utf-8"
-    UDP_DATA_BUFFER_SIZE = 8192
-    NEW_MERCHANT_FUND_AMOUNT = 100
-    MINER_DEFAULT_ADDRESS = 0
+    MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #
+    CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #
+    DATA_ENCODING_FORMAT = "utf-8"                              #
+    UDP_DATA_BUFFER_SIZE = 8192                                 #
+    NEW_MERCHANT_FUND_AMOUNT = 100                              #
+    MINER_DEFAULT_ADDRESS = 0                                   #
 
-    MERCHANT_PUBLIC_KEY_STR = "m_pkey"
-    MERCHANT_SIGNATURE_STR = "m_sign"
-    MERCHANT_TYPE_STR = "m_type"
-    MERCHANT_COMODITY_STR = "m_item"
-    MERCHANT_PRICE_STR = "m_price"
-    MERCHANT_IP_STR = "m_nIP"
-    MERCHANT_PORT_STR = "m_nPort"
-    MERCHANT_TYPE_BUYER_STR = "Buyer"
-    MERCHANT_TYPE_SELLER_STR = "Seller"
+    USERDATABASE_FILE_NAME = "clients.json"                     #
+    
+    MERCHANT_USERNAME_STR = "m_Username"                        #
+    MERCHANT_HASHED_USERNAME_STR = "m_HashedUsername"           #
+    MERCHANT_PRIVATE_KEY_STR = "m_PrivKey"                      #
+    MERCHANT_PUBLIC_KEY_STR = "m_PubKey"                        #
+    MERCHANT_SIGNATURE_STR = "m_Sign"                           #
+    MERCHANT_TYPE_STR = "m_Type"                                #
+    MERCHANT_COMODITY_STR = "m_Item"                            #
+    MERCHANT_PRICE_STR = "m_Price"                              #
+    MERCHANT_TYPE_BUYER_STR = "B"                               #
+    MERCHANT_TYPE_SELLER_STR = "S"                              #
 
     def __init__(self, market_ip, market_port, miner_ip, miner_port):
 
@@ -333,7 +336,7 @@ class Client:
         valid_username_found = True         #Found Flag
 
         #Open User DataBase File
-        UserDataBaseFile = open("clients.json", "r")
+        UserDataBaseFile = open(Client.USERDATABASE_FILE_NAME, "r")
 
         #Keep inputting from user until valid username is obtained
         while True:
@@ -391,14 +394,14 @@ class Client:
 
     def Update_UserDataBase_File(self):
         # Store into json file
-        UserDataBaseFile = open("clients.json", "a")
+        UserDataBaseFile = open(Client.USERDATABASE_FILE_NAME, "a")
 
         Database_Entry = {
-            "username": self.Current_Client_Username,
-            "pubkey": self.Current_Client_Public_Key,
-            "privkey": self.Current_Client_Private_Key,
-            "type": self.Current_Client_Type,
-            "hashed_username": self.Current_Client_HashedUsername
+            Client.MERCHANT_USERNAME_STR : self.Current_Client_Username,
+            Client.Current_Client_HashedUsername : self.Current_Client_HashedUsername,
+            Client.MERCHANT_PUBLIC_KEY_STR : self.Current_Client_Public_Key,
+            Client.MERCHANT_PRIVATE_KEY_STR : self.Current_Client_Private_Key,
+            Client.MERCHANT_TYPE_STR : self.Current_Client_Type,
         }
 
         #Write to file
