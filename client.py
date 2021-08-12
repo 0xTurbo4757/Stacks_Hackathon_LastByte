@@ -1,12 +1,14 @@
-import hashFunction
 import socket
 import json
-import sys
 import time
+import hashFunction
 from threading import Thread
+from ast import literal_eval
 from os import system
 
 class Client:
+
+    #CONSANTS
     MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
     CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
     DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
@@ -49,7 +51,8 @@ class Client:
 
         #Client Class Globals
         self.OrderBook = []         # has dictionaries at each index
-        self.BlockChain = []        # Entire BlockChain
+
+        self.BlockChain = {}        # Entire BlockChain as dictionary
     #EndFunction
 
     #OK
@@ -90,10 +93,10 @@ class Client:
         balance_taken_from_merchant = 0
         net_merchant_balance = 0
 
-        print("\n[INFO]: Current BlockChain is {}\n\n Its Size is: {}\n".format(self.BlockChain, len(self.BlockChain)))
+        #print("\n[INFO]: Current BlockChain is {}\n\n Its Size is: {}\n".format(self.BlockChain, self.Get_BlockChain_Size()))
 
         if (self.Get_BlockChain_Size() == 0):
-            print("\n[INFO]: You haven't been assigned initial funds from the miner\n")
+            print("\n[INFO]: You haven't been assigned initial funds from the miner")
             return 0
         #EndIf
         
@@ -140,7 +143,7 @@ class Client:
     #SOCKET
     def Send_Data_to_Market(self, data_to_send):
         self.ClientForMarket_Socket.sendto(
-            data_to_send.encode(Client.DATA_ENCODING_FORMAT),
+            str(data_to_send).encode(Client.DATA_ENCODING_FORMAT),
             self.ClientForMarket_SocketAddr
         )
     #EndFunction
@@ -183,7 +186,7 @@ class Client:
 
     #
     def Update_Current_BlockChain(self, new_block_chain):
-        self.BlockChain = new_block_chain
+        self.BlockChain = dict(new_block_chain)
     #EndFunction
     
     #
@@ -258,11 +261,12 @@ class Client:
                 print("2. Buy something")
             #EndIf
             print("3. View Orderbook")
-            print("4. Show public key")
-            print("5. Show Private key")
-            print("6. Clear Screen")
-            print("7. Logout")
-            print("8. Exit")
+            print("4. View Current BlockChain")
+            print("5. Show Your Current Public Key")
+            print("6. Show Your Current Private Key")
+            print("7. Clear Screen")
+            print("8. Logout")
+            print("9. Exit")
 
             try:
                 UserInput_Choice = int(input("\nEnter Choice Here: "))
@@ -273,24 +277,54 @@ class Client:
                 continue
             #EndTry
 
+            #View Current balance
             if (UserInput_Choice == 1):
-                print(self.Get_Merchant_Current_Balance(self.Current_Client_Public_Key))
+
+                print("\nYour Current Balance is: {}".format(self.Get_Merchant_Current_Balance(self.Current_Client_Public_Key)))
+
+            #Buy/Sell Something
             if (UserInput_Choice == 2):
+
                 self.Handle_Market_Buy_Sell_Operation()
+            
+            #View Orderbook
             if (UserInput_Choice == 3):
+
                 self.Request_Latest_OrderBook_from_Market()
                 self.Print_OrderBook()
+            
+            #View Current BlockChain
             if (UserInput_Choice == 4):
-                print(self.Current_Client_Public_Key)
+
+                self.Print_BlockChain()
+
+            #Show Your Current Public Key
             if (UserInput_Choice == 5):
-                print(self.Current_Client_Private_Key)
+
+                print("\nYour Current Public Key is: \n\n{}".format(self.Current_Client_Public_Key))
+
+            #Show Your Current Private Key
             if (UserInput_Choice == 6):
+
+                print("\nYour Current Private Key is: \n\n{}".format(self.Current_Client_Private_Key))
+
+            #Clear Screen
+            if (UserInput_Choice == 7):
+
                 self.Console_ClearScreen()
                 continue
-            if (UserInput_Choice == 7):
-                break
+
+            #Logout
             if (UserInput_Choice == 8):
+
+                self.Console_ClearScreen()
+                break
+            
+            #Exit
+            if (UserInput_Choice == 9):
+
                 exit()
+            
             #EndIf
 
             self.Console_Pause()
@@ -300,12 +334,18 @@ class Client:
     def Handle_Incoming_BlockChain_from_Miner_THREADED(self):
         while True:
             BlockChain_Data_RAW, Miner_Address = self.Get_Data_from_Miner()
+            #print("\nReceived BlockChain, Type = {}\n".format(type(BlockChain_Data_RAW)))
+            
             if (len(BlockChain_Data_RAW)):
                 #print("Received BlockChain {}".format(BlockChain_Data_RAW))
-                Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
+
+                #Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
+                Updated_BlockChain = literal_eval(BlockChain_Data_RAW)
+                
                 print("\nReceived BlockChain:")
                 self.Print_JSON_Object(Updated_BlockChain)
                 self.Update_Current_BlockChain(Updated_BlockChain)
+            
             #EndIf
         #EndWhile
     #EndFunction
@@ -314,6 +354,9 @@ class Client:
     # ----------------------------- MISC -----------------------------
     #OK
     def Get_BlockChain_Size(self):
+        #print("BlockChain Blocks: {}".format(self.BlockChain.keys()))
+
+        #len() on a dict returns number of top level keys in dict
         return len(self.BlockChain)
     #EndFunction
 
@@ -481,28 +524,50 @@ class Client:
     #EndFunction
 
     def Get_Signed_Request_Message_for_Market(self):
-        Final_Signed_Market_Request_Message = ""
+        Final_Signed_Market_Request_Message = {}
 
         UserInput_Item_Name = str(input("Enter Your Item name Here: "))
         UserInput_Item_Price = str(input("Enter Price For the Item Here: "))
 
-        Market_Request_Message_String = "[{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\"}" % (
-            Client.MERCHANT_COMODITY_STR,
-            UserInput_Item_Name,
-            Client.MERCHANT_PRICE_STR,
-            UserInput_Item_Price,
-            Client.MERCHANT_PUBLIC_KEY_STR,
-            self.Current_Client_Public_Key,
-            Client.MERCHANT_TYPE_STR,
-            self.Current_Client_Type
-        )
+        #BACKUP
+        # Market_Request_Message_String = "[{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\"}" % (
+        #     Client.MERCHANT_COMODITY_STR,
+        #     UserInput_Item_Name,
+        #     Client.MERCHANT_PRICE_STR,
+        #     UserInput_Item_Price,
+        #     Client.MERCHANT_PUBLIC_KEY_STR,
+        #     self.Current_Client_Public_Key,
+        #     Client.MERCHANT_TYPE_STR,
+        #     self.Current_Client_Type
+        # )
 
-        Market_Request_Digital_Signature = "{\"%s\":\"%s\"}]" % (
-            Client.MERCHANT_SIGNATURE_STR,
-            str((self.Get_Digital_Signature_using_PrivateKey(Market_Request_Message_String)).decode(Client.DATA_ENCODING_FORMAT))
-        )
+        Market_Request_Message_Dict = {
+            Client.MERCHANT_COMODITY_STR : UserInput_Item_Name,
+            Client.MERCHANT_PRICE_STR : UserInput_Item_Price,
+            Client.MERCHANT_PUBLIC_KEY_STR : self.Current_Client_Public_Key,
+            Client.MERCHANT_TYPE_STR : self.Current_Client_Type
+        }
 
-        Final_Signed_Market_Request_Message = Market_Request_Message_String + "," + Market_Request_Digital_Signature
+        Signature = (self.Get_Digital_Signature_using_PrivateKey(Market_Request_Message_Dict))
+
+        #print("\nSending Signature: {}\n\nType: {}".format(Signature, type(Signature)))
+
+        #print("\Decoded Signature: {}\n\nType: {}".format(hex(Signature), type(hex(Signature))))
+
+        #BACKUP
+        # Market_Request_Digital_Signature = "{\"%s\":\"%s\"}]" % (
+        #     Client.MERCHANT_SIGNATURE_STR,
+        #     Signature
+        # )
+
+        Final_Signed_Market_Request_Message = {
+            "m_msg" : Market_Request_Message_Dict,
+            Client.MERCHANT_SIGNATURE_STR : Signature
+        }
+
+        print("Final Dict: \n{}\n".format(Final_Signed_Market_Request_Message))
+
+        #Final_Signed_Market_Request_Message = Market_Request_Message_String + "," + Market_Request_Digital_Signature
 
         return Final_Signed_Market_Request_Message
     #EndFunction
