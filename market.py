@@ -1,11 +1,12 @@
 # Market Code Here
 import socket
 import json
+from ast import literal_eval
 from threading import Thread
-import ast
 
 class Market:
-    #Constants
+
+    #CONSANTS
     MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
     CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
     DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
@@ -43,10 +44,12 @@ class Market:
         self.OrderBook = []  # has dictionaries at each index
 
         self.TEST_BLOCK_CHAIN_TESTING_ONLY = '{"1":{"PreviousHash":"0x000000000000","Data":"0,1,100","Nonce":"852946123"},"2":{"PreviousHash":"0x000000000000","Data":"0,2,100","Nonce":"852946123"},"3":{"PreviousHash":"0x000000000000","Data":"0,3,100","Nonce":"852946123"},"4":{"PreviousHash":"0x000000000000","Data":"0,4,100","Nonce":"852946123"},"5":{"PreviousHash":"0x004433221100","Data":"1,2,12","Nonce":"681861688"},"6":{"PreviousHash":"0x006861831815","Data":"2,3,9","Nonce":"616840233"},"7":{"PreviousHash":"0x006516138131","Data":"3,4,8","Nonce":"694206900"},"8":{"PreviousHash":"0x006516138131","Data":"4,1,8","Nonce":"694206900"},"9":{"PreviousHash":"0x006516138131","Data":"2,4,5","Nonce":"694206900"}}'
-        self.BlockChain = []
+        
+        # Entire BlockChain as dictionary
+        self.BlockChain = {}
 
         #Testing ONLY
-        self.BlockChain = json.loads(self.TEST_BLOCK_CHAIN_TESTING_ONLY)
+        #self.BlockChain = json.loads(self.TEST_BLOCK_CHAIN_TESTING_ONLY)
         # self.
 
         #Stores list of Merchant Pkey, network Address that we have encountered
@@ -394,7 +397,7 @@ class Market:
 
     #
     def Update_Current_BlockChain(self, new_block_chain):
-        self.BlockChain = new_block_chain
+        self.BlockChain = dict(new_block_chain)
     #EndFunction
 
     def Request_Miner_to_give_New_Merchant_Funds(self, merchant_public_key):
@@ -535,12 +538,18 @@ class Market:
     def Handle_Incoming_BlockChain_from_Miner_THREADED(self):
         while True:
             BlockChain_Data_RAW, Miner_Address = self.Get_Data_from_Miner()
+            #print("\nReceived BlockChain, Type = {}\n".format(type(BlockChain_Data_RAW)))
+            
             if (len(BlockChain_Data_RAW)):
                 #print("Received BlockChain {}".format(BlockChain_Data_RAW))
-                Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
+
+                #Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
+                Updated_BlockChain = literal_eval(BlockChain_Data_RAW)
+                
                 print("\nReceived BlockChain:")
                 self.Print_JSON_Object(Updated_BlockChain)
                 self.Update_Current_BlockChain(Updated_BlockChain)
+            
             #EndIf
         #EndWhile
     #EndFunction
@@ -549,6 +558,9 @@ class Market:
     # ----------------------------- MISC -----------------------------
     #OK
     def Get_BlockChain_Size(self):
+        #print("BlockChain Blocks: {}".format(self.BlockChain.keys()))
+
+        #len() on a dict returns number of top level keys in dict
         return len(self.BlockChain)
     #EndFunction
 
@@ -628,13 +640,13 @@ def main():
     client_port = 2500
     market = Market(ip, server_port, ip, client_port)
     
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
+    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
+    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
     #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
     #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
 
-    market.Request_Miner_to_give_New_Merchant_Funds("1")
-    market.Request_Miner_to_give_New_Merchant_Funds("2")
+    #market.Request_Miner_to_give_New_Merchant_Funds("1")
+    #market.Request_Miner_to_give_New_Merchant_Funds("2")
 
     #market.Print_OrderBook()
     #market.Remove_From_OrderBook(4)
