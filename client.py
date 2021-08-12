@@ -439,6 +439,14 @@ class Client:
         return hashFunction.getSHA(target_username, 5)
     #EndFunction
 
+    def Print_JSON_Object(self, target_object):
+        print('\n', end='')
+
+        print(json.dumps(target_object, indent=4, sort_keys=True))
+        
+        print('\n', end='')
+    #EndFunction   
+
 
 
 
@@ -472,39 +480,42 @@ class Client:
             #EndTry
         #EndTry
 
-        #Keep inputting from user until valid username is obtained
-        while True:
-            #Found Flag
-            valid_username_found = True         
+        #Found Flag
+        user_already_exists = False         
 
-            #Get Username from user
-            final_username = str(input("\nEnter Your Name Here: "))
+        #Get Username from user
+        final_username = str(input("\nEnter Your Name Here: "))
 
-            #Get Hash of the target Username
-            target_hashed_username = self.Get_Hashed_Username(final_username)
+        #Get Hash of the target Username
+        hashed_username = self.Get_Hashed_Username(final_username)
 
-            #Iterate through database to check if username already exists
-            for current_line in UserDataBaseFile:
-                current_user_entry_JSON = json.loads(current_line)
-                if current_user_entry_JSON[Client.MERCHANT_HASHED_USERNAME_STR] == target_hashed_username:
-                    valid_username_found = False
-                    break
-                #EndIf
-            #EndFor
+        UserDataBase_JSON = json.load(UserDataBaseFile)
 
-            if (valid_username_found):
-                #Save Final Username Hash
-                self.Current_Client_HashedUsername = target_hashed_username
+        #Iterate through database to check if username already exists
+        for current_entry in UserDataBase_JSON["UserData"]:   
 
-                #GTFO!
+            if current_entry[Client.MERCHANT_HASHED_USERNAME_STR] == hashed_username:
+                valid_username_found = True
                 break
-            else:
-                print("\n[ERROR]: Can't use this Username!\nAlready exists (Public key clash)\nPlease Choose another Username\n")
             #EndIf
-        #EndWhile
+
+            #self.Print_JSON_Object(current_entry["m_Username"])
+        #EndFor
+
+        if (valid_username_found):
+            #Save Final Username Hash
+            self.Current_Client_HashedUsername = target_hashed_username
+        else:
+            print("\n[ERROR]: Can't use this Username!\nAlready exists (Public key clash)\nPlease Choose another Username\n")
+        #EndIf
 
         #Close The File
         UserDataBaseFile.close()
+
+
+        ########## DEBUGGING ##########
+        exit()
+        ########## DEBUGGING ##########
 
         #Return the valid Username
         return final_username
