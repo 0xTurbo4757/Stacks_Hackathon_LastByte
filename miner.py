@@ -4,7 +4,8 @@ import socket
 
 class Miner:
 
-    #CONSANTS
+# --------------------------------- CONSTANTS
+
     MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
     CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
     DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
@@ -21,6 +22,8 @@ class Miner:
 
     MINER_BLOCKCHAIN_GENESIS_PREV_HASH = "0000000000000000000000000000000000000000000000000000000000000000"
 
+# --------------------------------- CONSTRUCTOR
+
     def __init__(self, server_ip, server_port):
         
         self.Current_Block_Number = 1
@@ -36,6 +39,8 @@ class Miner:
         self.ServerForClient_Socket.bind((server_ip, server_port))
     #EndFunction
 
+# --------------------------------- MINER
+
     def Check_if_Correct_Hash_Found_by_Difficulty_Level(self, target_hash, target_zeros):
         try:
             target_hash_found = (int(target_hash[0:target_zeros]) == 0)
@@ -44,6 +49,10 @@ class Miner:
         #EndTry
         return target_hash_found
     #EndIf
+
+    def Generate_New_Block_Request(self, from_addr, to_addr, amount):
+        return "%s,%s,%s" % (from_addr, to_addr, amount)
+    #EndFunction
 
     def Update_BlockChain(self):
         # Creating A Block
@@ -115,9 +124,7 @@ class Miner:
         self.Previous_Block_Hash = currentBlockHash
     #EndFunction
 
-    def Generate_New_Block_Request(self, from_addr, to_addr, amount):
-        return "%s,%s,%s" % (from_addr, to_addr, amount)
-    #EndFunction
+# --------------------------------- HANDLERS
 
     def Handle_Incoming_Request_from_Client(self):
         incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(Miner.UDP_DATA_BUFFER_SIZE)
@@ -170,12 +177,17 @@ class Miner:
         #EndIf
     #EndFunction
 
+# --------------------------------- RUN
+
     def RunMiner(self):
         while True:
             self.Handle_Incoming_Request_from_Client()
         #EndWhile
     #EndFunction
+
 #EndClass
+
+# --------------------------------- MAIN
 
 def main():
 
@@ -186,7 +198,7 @@ def main():
     
     ip = "localhost"
     server_for_miner_port = 55000
-    
+
     miner = Miner(ip, server_for_miner_port)
     miner.RunMiner()
 # EndMain
