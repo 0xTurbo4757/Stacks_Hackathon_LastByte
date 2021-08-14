@@ -4,6 +4,7 @@ import json
 from ast import literal_eval
 from threading import Thread
 import constants
+import base64
 
 class Market:
 

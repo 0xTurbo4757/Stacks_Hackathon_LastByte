@@ -7,6 +7,7 @@ from threading import Thread
 from ast import literal_eval
 from os import system
 import constants
+import base64
 
 class Client:
 
@@ -513,56 +514,47 @@ class Client:
     #EndFunction
     
     def Get_Signed_Request_Message_for_Market(self):
-        Final_Signed_Market_Request_Message = {}
+
+        Final_Signed_Market_Request_Msg_String = constants.MARKET_NEW_ORDER_REQUEST_STR
+        Final_Signed_Market_Request_Msg_String += ":"
 
         UserInput_Item_Name = str(input("\nEnter Your Item name Here: "))
         UserInput_Item_Price = str(input("Enter Price For the Item Here: "))
 
-        #Request Format: ODR:{JSON}
-        Market_Request_Message_String = constants.MARKET_NEW_ORDER_REQUEST_STR
-        Market_Request_Message_String += ":"
+        #
+        Market_Request_Dict = {
+            constants.MERCHANT_PUBLIC_KEY_STR : self.Current_Client_Public_Key,
+            constants.MERCHANT_TYPE_STR : self.Current_Client_Type,
+            constants.MERCHANT_COMODITY_STR : UserInput_Item_Name,
+            constants.MERCHANT_PRICE_STR : UserInput_Item_Price
+        }
 
-        #BACKUP
-        Market_Request_Message_String += "{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\"}" % (
-            constants.MERCHANT_COMODITY_STR,
-            UserInput_Item_Name,
-            constants.MERCHANT_PRICE_STR,
-            UserInput_Item_Price,
-            constants.MERCHANT_PUBLIC_KEY_STR,
-            self.Current_Client_Public_Key,
-            constants.MERCHANT_TYPE_STR,
-            self.Current_Client_Type
-        )
-
-        # Market_Request_Message_Dict = {
-        #     constants.MERCHANT_COMODITY_STR : UserInput_Item_Name,
-        #     constants.MERCHANT_PRICE_STR : UserInput_Item_Price,
-        #     constants.MERCHANT_PUBLIC_KEY_STR : self.Current_Client_Public_Key,
-        #     constants.MERCHANT_TYPE_STR : self.Current_Client_Type
-        # }
-
-        #Signature = (self.Get_Digital_Signature_using_PrivateKey(Market_Request_Message_Dict))
-
-        #print("\nSending Signature: {}\n\nType: {}".format(Signature, type(Signature)))
-
-        #print("\Decoded Signature: {}\n\nType: {}".format(hex(Signature), type(hex(Signature))))
-
-        #BACKUP
-        # Market_Request_Digital_Signature = "{\"%s\":\"%s\"}]" % (
-        #     constants.MERCHANT_SIGNATURE_STR,
-        #     Signature
+        # Market_Request_String = "{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\"}" % (
+        #     constants.MERCHANT_COMODITY_STR,
+        #     UserInput_Item_Name,
+        #     constants.MERCHANT_PRICE_STR,
+        #     UserInput_Item_Price,
+        #     constants.MERCHANT_PUBLIC_KEY_STR,
+        #     self.Current_Client_Public_Key,
+        #     constants.MERCHANT_TYPE_STR,
+        #     self.Current_Client_Type
         # )
 
-        # Final_Signed_Market_Request_Message = {
-        #     "m_msg" : Market_Request_Message_Dict,
-        #     constants.MERCHANT_SIGNATURE_STR : Signature
-        # }
+        Market_Request_String = str(Market_Request_Dict)
 
-        #print("Final Dict: \n{}\n".format(Final_Signed_Market_Request_Message))
+        #
+        Signature_Bytes = self.Get_Digital_Signature_using_PrivateKey(Market_Request_String)
 
-        #Final_Signed_Market_Request_Message = Market_Request_Message_String + "," + Market_Request_Digital_Signature
+        Base64_Encoded_Signature = base64.b64encode(Signature_Bytes)
 
-        return Market_Request_Message_String
+        Signed_Market_Request_Msg_Dict = {
+            constants.MERCHANT_SIGNATURE_MSG_STR : Market_Request_Dict,
+            constants.MERCHANT_SIGNATURE_SIGN_STR : Base64_Encoded_Signature.decode(constants.MERCHANT_SIGNATURE_ENCODING_STR)
+        }
+
+        Final_Signed_Market_Request_Msg_String += str(Signed_Market_Request_Msg_Dict)
+
+        return Final_Signed_Market_Request_Msg_String
     #EndFunction
 
 # --------------------------------- MISC
@@ -695,7 +687,28 @@ def main():
     # Client_OrderBook_Update_THREAD.start()
 
     #Run The Client
-    client.RunClient()
+    #client.RunClient()
+    client.Handle_New_User()
+
+    req = client.Get_Signed_Request_Message_for_Market()
+
+    #The request is in format: ODR:{MERCHANT_JSON_OBJ}
+    OrderBook_Request = req[4:]
+
+    try:
+        Merchant_OrderBook_Add_JSON = dict(literal_eval(OrderBook_Request))
+    except Exception as e:
+        print("OrderBook Decoder couldnt Parse Request {}\nError: {}".format(req, e))
+        print("Request Ignored :(")
+        return
+    #EndTry
+
+    client.Print_JSON_Object(Merchant_OrderBook_Add_JSON)
+
+    sign = base64.b64decode(Merchant_OrderBook_Add_JSON["Sign"])
+
+    print("Sign Verified: {}".format(client.Verify_Digital_Signature_using_PublicKey(sign, str(dict(Merchant_OrderBook_Add_JSON["Msg"])))))
+
     # while True:
 
     #     print("\nSock Details: {}\n".format(client.ClientForMarket_Socket.getsockname()))

@@ -17,6 +17,11 @@ MERCHANT_PORT_STR = "m_nPort"                               #JSON KEY: Merchant 
 MERCHANT_TYPE_BUYER_STR = "Buyer"                           #JSON VAL: Merchant Type: Buyer
 MERCHANT_TYPE_SELLER_STR = "Seller"                         #JSON VAL: Merchant Type: Seller
 
+#Signature Settings
+MERCHANT_SIGNATURE_MSG_STR = "Msg"
+MERCHANT_SIGNATURE_SIGN_STR = "Sign"
+MERCHANT_SIGNATURE_ENCODING_STR = "ascii"
+
 #Request Strings
 MARKET_NEW_MERCHANT_REQUEST_STR = "NEW"
 MARKET_NEW_ORDER_REQUEST_STR = "ODR"
