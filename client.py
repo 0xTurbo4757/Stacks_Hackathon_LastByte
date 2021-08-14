@@ -169,7 +169,13 @@ class Client:
 
 # --------------------------------- UPDATERS
     
-    def Update_Current_OrderBook(self, new_orderbook):
+    def Update_Current_OrderBook(self):
+        f = open("orderbook.txt","r")
+        new_orderbook = f.read()
+        f.close()
+
+
+        new_orderbook = list(eval(new_orderbook))
         self.OrderBook = list(new_orderbook)
     #EndFunction
 
@@ -180,11 +186,11 @@ class Client:
 
 # --------------------------------- REQUESTS
 
-    #Requests market to send latest OrderBook
-    #This function is used in threading for constant update of OrderBook
-    def Request_Latest_OrderBook_from_Market(self):
-        self.Send_Data_to_Market(constants.CLIENT_ORDERBOOK_REQUEST_STR)
-    #EndFunction
+    # #Requests market to send latest OrderBook
+    # #This function is used in threading for constant update of OrderBook
+    # def Request_Latest_OrderBook_from_Market(self):
+    #     self.Send_Data_to_Market(constants.CLIENT_ORDERBOOK_REQUEST_STR)
+    # #EndFunction
 
     #Requests miner to send latest BlockChain
     #This function is used in threading for constant update of BlockChain
@@ -243,7 +249,7 @@ class Client:
 
             #Request Market To Send Latest OrderBook
             #Received OrderBook asynchronously updated using threads
-            self.Request_Latest_OrderBook_from_Market()
+            #self.Request_Latest_OrderBook_from_Market()
 
             self.Console_ClearScreen()
 
@@ -285,6 +291,7 @@ class Client:
             #View Orderbook
             if (UserInput_Choice == 3):
 
+                self.Update_Current_OrderBook()
                 self.Print_OrderBook()
             
             #View Current BlockChain
@@ -345,21 +352,21 @@ class Client:
         #EndWhile
     #EndFunction
 
-    def Handle_Incoming_OrderBook_from_Market_THREADED(self):
-        while True:
-            print("\nAttempting Data Read From Market..")
-            OrderBook_Data_RAW, Market_Addr = self.Get_Data_from_Market()
+    # def Handle_Incoming_OrderBook_from_Market_THREADED(self):
+    #     while True:
+    #         print("\nAttempting Data Read From Market..")
+    #         OrderBook_Data_RAW, Market_Addr = self.Get_Data_from_Market()
 
-            if (len(OrderBook_Data_RAW)):
-                print("Received: '{}' from 'localhost:{}'".format(OrderBook_Data_RAW, Market_Addr[1]))
+    #         if (len(OrderBook_Data_RAW)):
+    #             print("Received: '{}' from 'localhost:{}'".format(OrderBook_Data_RAW, Market_Addr[1]))
 
-                Updated_OrderBook = literal_eval(OrderBook_Data_RAW)
+    #             Updated_OrderBook = literal_eval(OrderBook_Data_RAW)
 
-                self.Update_Current_OrderBook(Updated_OrderBook)
+    #             self.Update_Current_OrderBook(Updated_OrderBook)
 
-            #EndIf
-        #EndWhile
-    #EndFunction
+    #         #EndIf
+    #     #EndWhile
+    # #EndFunction
 
 # --------------------------------- USER
 
@@ -590,7 +597,9 @@ class Client:
         # EndIf
 
         index = 1
+
         for current_order in self.OrderBook:
+            
             print("\nMerchant {}".format(index))
             print("Merchant Type : {}".format(current_order[constants.MERCHANT_TYPE_STR]))
             print("Merchant Key  : {}".format(current_order[constants.MERCHANT_PUBLIC_KEY_STR]))
@@ -650,9 +659,9 @@ def main():
     Client_BlockChain_Update_THREAD.start()
 
     #Threading For OrderBook Update
-    Client_OrderBook_Update_THREAD = Thread(target=client.Handle_Incoming_OrderBook_from_Market_THREADED)
-    Client_OrderBook_Update_THREAD.daemon = True
-    Client_OrderBook_Update_THREAD.start()
+    # Client_OrderBook_Update_THREAD = Thread(target=client.Handle_Incoming_OrderBook_from_Market_THREADED)
+    # Client_OrderBook_Update_THREAD.daemon = True
+    # Client_OrderBook_Update_THREAD.start()
 
     #Run The Client
     client.RunClient()

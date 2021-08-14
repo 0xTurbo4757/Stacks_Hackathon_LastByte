@@ -78,6 +78,7 @@ class Market:
                 constants.MERCHANT_PRICE_STR: comodity_price
             }
         )
+        self.Save_Orderbook_to_File()
     # EndFunction
 
     def Get_Index_of_merchant_in_OrderBook(self, merchant_public_key):
@@ -325,6 +326,14 @@ class Market:
             self.ClientForMiner_SocketAddr
         )
     #EndFunction
+
+    #Save Orderbook to a file
+    def Save_Orderbook_to_File(self):
+        f = open("orderbook.txt","w")
+        f.write(str(self.OrderBook))
+        f.close()
+
+
 
     #Send OrderBook to the Merchant requesting it using merchant Addr (tuple)
     def Send_OrderBook_to_Merchant(self, merchant_addr):
