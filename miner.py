@@ -187,8 +187,6 @@ class Miner:
 
 #EndClass
 
-# --------------------------------- MAIN
-
 def main():
 
     #Empty Json file to prevent errors

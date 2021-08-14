@@ -630,7 +630,6 @@ class Client:
 
 #EndClass
 
-# --------------------------------- MAIN
 def main():
     market_ip = "localhost"
     miner_ip = market_ip
