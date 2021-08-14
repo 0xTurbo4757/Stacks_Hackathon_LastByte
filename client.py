@@ -58,7 +58,7 @@ class Client:
             return 0
         #EndIf
 
-        print("Your Transaction History:")
+        print("\nYour Transaction History:")
         
         #Iterate thru entire chain for balance given to merchant
         for current_block_iterator in range(1, (self.Get_BlockChain_Size() + 1)):
@@ -71,7 +71,7 @@ class Client:
 
             #If Merchant Recieved Funds
             if (receiver_key == merchant_public_key):
-                print("\nYou received {} from {}".format(amount_transfered, sender_key))
+                print("\nYou received '{}' from '{}'".format(amount_transfered, sender_key))
                 balance_given_to_merchant += int(amount_transfered)
             #EndIf
         #EndFor
@@ -87,7 +87,7 @@ class Client:
 
             #If Merchant Sent Funds
             if (sender_key == merchant_public_key):
-                print("\nYou Sent {} to {}".format(sender_key, amount_transfered, receiver_key))
+                print("\nYou Sent '{}' to '{}'".format(amount_transfered, receiver_key))
                 balance_taken_from_merchant += int(amount_transfered)
             #EndIf
         #EndFor
