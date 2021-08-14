@@ -611,6 +611,11 @@ class Market:
         print("BlockChain Size: {}".format(self.Get_BlockChain_Size()))
     #EndFunction
 
+    def Reset_OrderBook_File(self):
+        New_OrderBook = open("orderbook.txt","w")
+        New_OrderBook.close()
+    #EndFunction
+
 # --------------------------------- RUN
 
     #Main Loop
@@ -662,8 +667,8 @@ def main():
     Market_BlockChain_Update_THREAD.daemon = True
     Market_BlockChain_Update_THREAD.start()
 
-    #Empty The OrderBook
-    market.Update_Orderbook_to_File()
+    #Reset The OrderBook File
+    market.Reset_OrderBook_File()
 
     #Run The market
     market.RunMarket()
