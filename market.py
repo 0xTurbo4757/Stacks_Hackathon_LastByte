@@ -5,6 +5,7 @@ from ast import literal_eval
 from threading import Thread
 import constants
 import base64
+import hashFunction
 
 class Market:
 
@@ -364,6 +365,18 @@ class Market:
         )
     #EndFunction
 
+# --------------------------------- DIGITAL SIGNATURE
+
+    def Verify_Digital_Signature_using_PublicKey(self, target_signature, target_message, target_public_key):
+        if (hashFunction.verify_signature(target_signature, target_message, target_public_key)):
+            print("Signature Verified from public key")
+            return True
+        else:
+            print("Cannot Verify")
+            return False
+        #EndIf
+    #EndFunction
+
 # --------------------------------- HANDLERS
 
     def Handle_All_Potential_TXNs_within_OrderBook(self):
@@ -444,7 +457,19 @@ class Market:
             elif (Incoming_Data[0:3] == constants.MARKET_NEW_MERCHANT_REQUEST_STR):
 
                 #The request is in format: NEW:PUB_KEY
-                Merchant_Public_Key = Incoming_Data[4:]
+                Initial_Funds_Signed_Request_Str = Incoming_Data[4:]
+
+                #Parse Incoming Dict with sign
+                try:
+                    Initial_Funds_Signed_Request_Dict = dict(literal_eval(Initial_Funds_Signed_Request_Str))
+                except Exception as e:
+                    print("OrderBook Decoder couldnt Parse Request {}\nError: {}".format(Incoming_Data, e))
+                    print("Request Ignored :(")
+                    return
+                #EndTry
+
+                #Get Data out of Dict, Msg has Merchant Public Key
+                Merchant_Public_Key = Initial_Funds_Signed_Request_Dict[constants.MERCHANT_SIGNATURE_MSG_STR][constants.MERCHANT_PUBLIC_KEY_STR]
 
                 #if Merchant doesnt Exists in ListOfUniqueMerchants
                 if (not(self.Check_if_Merchant_Exists_in_ExistingMerchant_List(Merchant_Public_Key))):
@@ -463,15 +488,19 @@ class Market:
             elif (Incoming_Data[0:3] == constants.MARKET_NEW_ORDER_REQUEST_STR):
 
                 #The request is in format: ODR:{MERCHANT_JSON_OBJ}
-                OrderBook_Request = Incoming_Data[4:]
+                OrderBook_Signed_Request_Str = Incoming_Data[4:]
 
+                #Parse Incoming Dict with sign
                 try:
-                    Merchant_OrderBook_Add_JSON = dict(literal_eval(OrderBook_Request))
+                    OrderBook_Signed_Request_Dict = dict(literal_eval(OrderBook_Signed_Request_Str))
                 except Exception as e:
                     print("OrderBook Decoder couldnt Parse Request {}\nError: {}".format(Incoming_Data, e))
                     print("Request Ignored :(")
                     return
                 #EndTry
+
+                #Get Dict out of incoming Dict
+                Merchant_OrderBook_Add_JSON = OrderBook_Signed_Request_Dict[constants.MERCHANT_SIGNATURE_MSG_STR]
 
                 #if Merchant doesnt Exists in OrderBook
                 if (not(self.Check_if_Merchant_Exists_in_OrderBook(Merchant_OrderBook_Add_JSON[constants.MERCHANT_PUBLIC_KEY_STR]))):
@@ -625,52 +654,19 @@ def main():
     server_for_client_port = 56000
     client_for_miner_port = 55000
 
+    #Miner Object
     market = Market(ip, server_for_client_port, ip, client_for_miner_port)
-    
-    #market.Request_Miner_to_give_New_Merchant_Funds("1")
-    #market.Request_Miner_to_give_New_Merchant_Funds("2")
-
-    #market.Add_Merchant_To_OrderBook(constants.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
-    #market.Add_Merchant_To_OrderBook(constants.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
-    #market.Add_Merchant_To_OrderBook(constants.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
-    #market.Add_Merchant_To_OrderBook(constants.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
-
-
-    #market.Print_OrderBook()
-    #market.Remove_From_OrderBook(4)
-    #print("\n---------------------------")
-    #market.Get_All_Potential_TXN_in_OrderBook()
-    #print("P Key: {}".format(market.Get_Index_of_merchant_in_OrderBook(1)))
-    #print(market.Extract_Data_from_BlockChain_BlockData("56841536845368435684359865,958451856958698546982,500"))
-    #market.Print_BlockChain()
-    #print(market.Get_Merchant_Current_Balance("1"))
-    #market.Handle_Incoming_Request_for_OrderBook()
     
     #Threading For BlockChain Update
     Market_BlockChain_Update_THREAD = Thread(target=market.Handle_Incoming_BlockChain_from_Miner_THREADED)
     Market_BlockChain_Update_THREAD.daemon = True
     Market_BlockChain_Update_THREAD.start()
 
-    #market.Send_Data_to_Miner("HELLO MINER!")
+    #Empty The OrderBook
+    market.Update_Orderbook_to_File()
 
     #Run The market
     market.RunMarket()
-
-    # while True:
-    #     print("\nListening for Client Request")
-    #     Data, Client_Address = market.Get_Data_from_Merchant()
-    #     if (len(Data)):
-    #         print("\n\nReceived Data: {}".format(Data))
-    #         print("From Addr    : {}\n".format(Client_Address))
-
-    #         #If Merchant Expects Latest OrderBook, send it to them
-    #         if (Data == constants.CLIENT_ORDERBOOK_REQUEST_STR):
-
-    #             print("Sending OrderBook: \n{}\n\nto Client: {}".format(market.OrderBook, Client_Address))
-    #             market.Send_OrderBook_to_Merchant(Client_Address)
-    #         #End
-    #     #EndIf
-    # #EndWhile
 #EndMain
 
 if __name__ == "__main__":

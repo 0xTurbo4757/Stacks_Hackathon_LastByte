@@ -20,6 +20,7 @@ MERCHANT_TYPE_SELLER_STR = "Seller"                         #JSON VAL: Merchant 
 #Signature Settings
 MERCHANT_SIGNATURE_MSG_STR = "Msg"
 MERCHANT_SIGNATURE_SIGN_STR = "Sign"
+MERCHANT_SIGNATURE_PUBLIC_KEY_OBJ_STR = "pKey"
 MERCHANT_SIGNATURE_ENCODING_STR = "ascii"
 
 #Request Strings

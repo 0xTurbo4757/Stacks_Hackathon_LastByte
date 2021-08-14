@@ -57,6 +57,8 @@ class Client:
             print("\n[INFO]: You haven't been assigned initial funds from the miner")
             return 0
         #EndIf
+
+        print("Your Transaction History:")
         
         #Iterate thru entire chain for balance given to merchant
         for current_block_iterator in range(1, (self.Get_BlockChain_Size() + 1)):
@@ -69,7 +71,7 @@ class Client:
 
             #If Merchant Recieved Funds
             if (receiver_key == merchant_public_key):
-                print("Merchant \n'{}'\nreceived {}'\nfrom\n'{}\n".format(receiver_key, amount_transfered, sender_key))
+                print("\nYou received {} from {}".format(amount_transfered, sender_key))
                 balance_given_to_merchant += int(amount_transfered)
             #EndIf
         #EndFor
@@ -85,7 +87,7 @@ class Client:
 
             #If Merchant Sent Funds
             if (sender_key == merchant_public_key):
-                print("Merchant {} Sent {} from {}".format(sender_key, amount_transfered, receiver_key))
+                print("\nYou Sent {} to {}".format(sender_key, amount_transfered, receiver_key))
                 balance_taken_from_merchant += int(amount_transfered)
             #EndIf
         #EndFor
@@ -177,12 +179,6 @@ class Client:
 
 # --------------------------------- REQUESTS
 
-    # #Requests market to send latest OrderBook
-    # #This function is used in threading for constant update of OrderBook
-    # def Request_Latest_OrderBook_from_Market(self):
-    #     self.Send_Data_to_Market(constants.CLIENT_ORDERBOOK_REQUEST_STR)
-    # #EndFunction
-
     #Requests miner to send latest BlockChain
     #This function is used in threading for constant update of BlockChain
     def Request_Latest_BlockChain_from_Miner(self):
@@ -190,11 +186,22 @@ class Client:
     #EndFunction
 
     def Request_Initial_Funds_from_Market(self):
-        request_str = constants.MARKET_NEW_MERCHANT_REQUEST_STR
-        request_str += ":"
-        request_str += self.Current_Client_Public_Key
+        Request_String = constants.MARKET_NEW_MERCHANT_REQUEST_STR
+        Request_String += ":"
 
-        self.Send_Data_to_Market(request_str)
+        #Form Msg Dict
+        Msg_Dict = {
+            constants.MERCHANT_PUBLIC_KEY_STR : self.Current_Client_Public_Key      #Send current Public Key
+        }
+
+        #Get Signed Dict
+        Signed_Request_Dict = self.Generate_Signature_for_Message(Msg_Dict)
+
+        #Stringify the final dict
+        Request_String += str(Signed_Request_Dict)
+
+        #Send the request to market
+        self.Send_Data_to_Market(Request_String)
     #EndFunction
 
 # --------------------------------- CONSOLE 
@@ -238,7 +245,7 @@ class Client:
 
     #Place bid on the Market
     def Handle_Market_Buy_Sell_Operation(self):
-        self.Send_Data_to_Market(self.Get_Signed_Request_Message_for_Market())
+        self.Send_Data_to_Market(self.Get_Signed_Market_Buy_Sell_Request_String())
     #EndFunction
 
     #Main Menu Handler
@@ -294,6 +301,8 @@ class Client:
             if (UserInput_Choice == 2):
 
                 self.Handle_Market_Buy_Sell_Operation()
+
+                print("\nYour Request has been added to the OrderBook!")
             
             #View Orderbook
             if (UserInput_Choice == 3):
@@ -496,15 +505,11 @@ class Client:
 # --------------------------------- DIGITAL SIGNATURE
     
     def Get_Digital_Signature_using_PrivateKey(self, target_message):
-        #n = str(random.randint(1,1000))
-        #n = self.Current_Client_Username + n
-        #hashh = hashFunction.getSHA(n,5)
-
         return hashFunction.generate_signature(target_message, self.Current_Client_RSA_KEY_OBJ)
     #EndFunction
 
-    def Verify_Digital_Signature_using_PublicKey(self, target_signature, target_message):
-        if (hashFunction.verify_signature(target_signature, target_message, self.Current_Client_Public_Key_PEM)):
+    def Verify_Digital_Signature_using_PublicKey(self, target_signature, target_message, target_public_key):
+        if (hashFunction.verify_signature(target_signature, target_message, target_public_key)):
             print("Signature Verified from public key")
             return True
         else:
@@ -512,8 +517,35 @@ class Client:
             return False
         #EndIf
     #EndFunction
-    
-    def Get_Signed_Request_Message_for_Market(self):
+
+    #Takes in target msg dictionary and returns a dictionary with
+    # MSG : target_msg_dict
+    # SIGN : Signature (Base64 Encoded as it was in bytes)
+    def Generate_Signature_for_Message(self, target_msg_dict):
+
+        #Convert target dict into string
+        target_msg_str = str(target_msg_dict)
+
+        #Generate the signature of stringified dict
+        Signature_Bytes = self.Get_Digital_Signature_using_PrivateKey(target_msg_str)
+
+        #Base64 Encode the signature obj (which was of type Bytes)
+        Base64_Encoded_Signature = base64.b64encode(Signature_Bytes)
+
+        #Form final dict with msg and its sign (base64 encoded)
+        Signed_Request_Msg_Dict = {
+            constants.MERCHANT_SIGNATURE_MSG_STR : target_msg_dict,
+            constants.MERCHANT_SIGNATURE_SIGN_STR : Base64_Encoded_Signature.decode(constants.MERCHANT_SIGNATURE_ENCODING_STR)
+        }
+
+        #Return Final Dict
+        return Signed_Request_Msg_Dict
+    #EndFunction
+
+    def Get_Signed_Market_Buy_Sell_Request_String(self):
+
+        #Returns String in Format:
+        #  ODR:{"Msg":{MARKET_REQUEST_DICT},"Sign":{BASE_64_ENCODED_SIGNATURE}}
 
         Final_Signed_Market_Request_Msg_String = constants.MARKET_NEW_ORDER_REQUEST_STR
         Final_Signed_Market_Request_Msg_String += ":"
@@ -529,6 +561,10 @@ class Client:
             constants.MERCHANT_PRICE_STR : UserInput_Item_Price
         }
 
+        Signed_Request_Dict = self.Generate_Signature_for_Message(Market_Request_Dict)
+
+        Final_Signed_Market_Request_Msg_String += str(Signed_Request_Dict)
+
         # Market_Request_String = "{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\"}" % (
         #     constants.MERCHANT_COMODITY_STR,
         #     UserInput_Item_Name,
@@ -540,19 +576,19 @@ class Client:
         #     self.Current_Client_Type
         # )
 
-        Market_Request_String = str(Market_Request_Dict)
+        # Market_Request_String = str(Market_Request_Dict)
 
-        #
-        Signature_Bytes = self.Get_Digital_Signature_using_PrivateKey(Market_Request_String)
+        # #
+        # Signature_Bytes = self.Get_Digital_Signature_using_PrivateKey(Market_Request_String)
 
-        Base64_Encoded_Signature = base64.b64encode(Signature_Bytes)
+        # Base64_Encoded_Signature = base64.b64encode(Signature_Bytes)
 
-        Signed_Market_Request_Msg_Dict = {
-            constants.MERCHANT_SIGNATURE_MSG_STR : Market_Request_Dict,
-            constants.MERCHANT_SIGNATURE_SIGN_STR : Base64_Encoded_Signature.decode(constants.MERCHANT_SIGNATURE_ENCODING_STR)
-        }
+        # Signed_Market_Request_Msg_Dict = {
+        #     constants.MERCHANT_SIGNATURE_MSG_STR : Market_Request_Dict,
+        #     constants.MERCHANT_SIGNATURE_SIGN_STR : Base64_Encoded_Signature.decode(constants.MERCHANT_SIGNATURE_ENCODING_STR)
+        # }
 
-        Final_Signed_Market_Request_Msg_String += str(Signed_Market_Request_Msg_Dict)
+        # Final_Signed_Market_Request_Msg_String += str(Signed_Market_Request_Msg_Dict)
 
         return Final_Signed_Market_Request_Msg_String
     #EndFunction
@@ -611,11 +647,11 @@ class Client:
         print("")
         print("OrderBook:\n")
 
-        print(' {0:^10} | {1:^10} | {2:^10} | {3:^10}'.format('Key','Type','Item', 'Price'))
+        print(' | {0:^10} | {1:^10} | {2:^10} | {3:^10} |'.format('Key','Type','Item', 'Price'))
 
         for current_order in self.OrderBook:
 
-            print(' {0:^10} | {1:^10} | {2:^10} | {3:^10}'.format(
+            print(' | {0:^10} | {1:^10} | {2:^10} | {3:^10} |'.format(
                 ".." + current_order[constants.MERCHANT_PUBLIC_KEY_STR][-7:],   #Print Last 7 charecters of Public Key
                 current_order[constants.MERCHANT_TYPE_STR],
                 current_order[constants.MERCHANT_COMODITY_STR], 
@@ -674,6 +710,7 @@ def main():
     client_for_market_port = 56000
     client_for_miner_port = 55000
 
+    #Client Object
     client = Client(market_ip, client_for_market_port, miner_ip, client_for_miner_port)
     
     #Threading For BlockChain Update
@@ -681,41 +718,8 @@ def main():
     Client_BlockChain_Update_THREAD.daemon = True
     Client_BlockChain_Update_THREAD.start()
 
-    #Threading For OrderBook Update
-    # Client_OrderBook_Update_THREAD = Thread(target=client.Handle_Incoming_OrderBook_from_Market_THREADED)
-    # Client_OrderBook_Update_THREAD.daemon = True
-    # Client_OrderBook_Update_THREAD.start()
-
     #Run The Client
-    #client.RunClient()
-    client.Handle_New_User()
-
-    req = client.Get_Signed_Request_Message_for_Market()
-
-    #The request is in format: ODR:{MERCHANT_JSON_OBJ}
-    OrderBook_Request = req[4:]
-
-    try:
-        Merchant_OrderBook_Add_JSON = dict(literal_eval(OrderBook_Request))
-    except Exception as e:
-        print("OrderBook Decoder couldnt Parse Request {}\nError: {}".format(req, e))
-        print("Request Ignored :(")
-        return
-    #EndTry
-
-    client.Print_JSON_Object(Merchant_OrderBook_Add_JSON)
-
-    sign = base64.b64decode(Merchant_OrderBook_Add_JSON["Sign"])
-
-    print("Sign Verified: {}".format(client.Verify_Digital_Signature_using_PublicKey(sign, str(dict(Merchant_OrderBook_Add_JSON["Msg"])))))
-
-    # while True:
-
-    #     print("\nSock Details: {}\n".format(client.ClientForMarket_Socket.getsockname()))
-    #     client.Request_Latest_OrderBook_from_Market()
-    #     client.Handle_Incoming_OrderBook_from_Market()
-    #     client.Print_OrderBook()
-    # #EndWhile
+    client.RunClient()
 #EndMain
 
 if __name__ == "__main__":

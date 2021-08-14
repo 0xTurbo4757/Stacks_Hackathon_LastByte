@@ -160,7 +160,10 @@ def main():
     ip = "localhost"
     server_for_miner_port = 55000
 
+    #Miner Object
     miner = Miner(ip, server_for_miner_port)
+
+    #Run The Miner
     miner.RunMiner()
 # EndMain
 
