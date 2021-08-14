@@ -7,35 +7,6 @@ import constants
 
 class Market:
 
-# --------------------------------- CONSTANTS
-
-    # MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
-    # CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
-    # DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
-    # UDP_DATA_BUFFER_SIZE = 32768                                #UDP Incomming data buffer size
-    # NEW_MERCHANT_FUND_AMOUNT = 100                              #Funds given to new merchants
-    # MINER_DEFAULT_ADDRESS = 0                                   #Default miner address
-
-    # USERDATABASE_FILE_NAME = "clients.json"                     #Filename of UserDataBase file
-    
-    # MERCHANT_USERNAME_STR = "m_Username"                        #JSON KEY: Merchant User Name
-    # MERCHANT_HASHED_USERNAME_STR = "m_HashedUsername"           #JSON KEY: Merchant Hashed User Name
-    # MERCHANT_PRIVATE_KEY_STR = "m_PrivKey"                      #JSON KEY: Merchant Private Key
-    # MERCHANT_PUBLIC_KEY_STR = "m_PubKey"                        #JSON KEY: Merchant Public Key
-    # MERCHANT_SIGNATURE_STR = "m_Sign"                           #JSON KEY: Merchant Signature
-    # MERCHANT_TYPE_STR = "m_Type"                                #JSON KEY: Merchant Type
-    # MERCHANT_COMODITY_STR = "m_Item"                            #JSON KEY: Merchant Item to sell/buy
-    # MERCHANT_PRICE_STR = "m_Price"                              #JSON KEY: Merchant Item Price
-    # MERCHANT_IP_STR = "m_nIP"                                   #JSON KEY: Merchant IP Address
-    # MERCHANT_PORT_STR = "m_nPort"                               #JSON KEY: Merchant Port
-    # MERCHANT_TYPE_BUYER_STR = "B"                               #JSON VAL: Merchant Type: Buyer
-    # MERCHANT_TYPE_SELLER_STR = "S"                              #JSON VAL: Merchant Type: Seller
-
-    # MINER_BLOCKCHAIN_PREVIOUS_HASH_STR = "PrevHash"             #
-    # MINER_BLOCKCHAIN_DATA_STR = "Data"                          #
-    # MINER_BLOCKCHAIN_NONCE_STR = "Nonce"                        #
-    # MINER_BLOCKCHAIN_COINBASE_STR = "CoinBase"                  #
-
 # --------------------------------- CONSTRUCTOR
 
     def __init__(self, server_ip, server_port, client_ip, client_port):
@@ -78,7 +49,6 @@ class Market:
                 constants.MERCHANT_PRICE_STR: comodity_price
             }
         )
-        self.Save_Orderbook_to_File()
     # EndFunction
 
     def Get_Index_of_merchant_in_OrderBook(self, merchant_public_key):
@@ -269,7 +239,7 @@ class Market:
 
                             #TXN if Buyer Price >= Seller
                             if (self.OrderBook[internal_order_iterator][constants.MERCHANT_PRICE_STR] >= external_order_iterator[constants.MERCHANT_PRICE_STR]):
-                                potential_TXNs.append((external_order_iterator[constants.MERCHANT_PUBLIC_KEY_STR], self.OrderBook[internal_order_iterator][constants.MERCHANT_PUBLIC_KEY_STR]))
+                                potential_TXNs.append((self.OrderBook[internal_order_iterator][constants.MERCHANT_PUBLIC_KEY_STR], external_order_iterator[constants.MERCHANT_PUBLIC_KEY_STR]))
                             #EndIf
                         
                         #If Internal Iterator is a Seller
@@ -327,14 +297,6 @@ class Market:
         )
     #EndFunction
 
-    #Save Orderbook to a file
-    def Save_Orderbook_to_File(self):
-        f = open("orderbook.txt","w")
-        f.write(str(self.OrderBook))
-        f.close()
-
-
-
     #Send OrderBook to the Merchant requesting it using merchant Addr (tuple)
     def Send_OrderBook_to_Merchant(self, merchant_addr):
         self.Send_Data_to_Merchant(
@@ -361,6 +323,13 @@ class Market:
 
     def Update_Current_BlockChain(self, new_block_chain):
         self.BlockChain = dict(new_block_chain)
+    #EndFunction
+
+    #Update Orderbook to a file
+    def Update_Orderbook_to_File(self):
+        New_OrderBook = open("orderbook.txt","w")
+        New_OrderBook.write(str(self.OrderBook))
+        New_OrderBook.close()
     #EndFunction
 
 # --------------------------------- REQUESTS
@@ -445,6 +414,9 @@ class Market:
                 self.Remove_Merchant_From_OrderBook(current_TXN[0])      #Remove Buyer Entry in OrderBook
                 self.Remove_Merchant_From_OrderBook(current_TXN[1])      #Remove Seller Entry in OrderBook
 
+                #Write Latest OrderBook Data to File
+                self.Update_Orderbook_to_File()
+
             else:
                 #Tell Buyer here that ur TXN cannot continue, not enough funds
                 pass
@@ -453,53 +425,52 @@ class Market:
     #EndFunction
 
     def Handle_Incoming_Request_from_Merchant(self):
+
         print("\nListening for Client Request")
-        Data, Client_Address = self.Get_Data_from_Merchant()
-        if (len(Data)):
-            print("\n\nReceived Data: {}".format(Data))
+        Incoming_Data, Client_Address = self.Get_Data_from_Merchant()
+
+        if (len(Incoming_Data)):
+            print("\n\nReceived Data: {}".format(Incoming_Data))
             print("From Addr    : {}\n".format(Client_Address))
 
-            #If Merchant Expects Latest OrderBook, send it to them
-            if (Data == constants.CLIENT_ORDERBOOK_REQUEST_STR):
+            #client Requested latest Orderbook
+            if (Incoming_Data == constants.CLIENT_ORDERBOOK_REQUEST_STR):
 
                 print("Sending OrderBook: \n{}\n\nto Client: {}".format(self.OrderBook, Client_Address))
                 self.Send_OrderBook_to_Merchant(Client_Address)
-            else:
 
-                #We have received request to add something to orderbook
-                #print("json 1: {} t: {}".format(Data, type(Data)))
-                #print("json 2: {} t: {}".format(json.loads(json.dumps(Data)), type(json.loads(Data))))
-                #print("json 3: {} t: {}".format(json.loads(json.dumps(Data)), type(json.loads(json.dumps(Data)))))
-                
-                #print("Data was: \n{}\n of type: \n{}".format(Data, type(Data)))
-                try:
-                    Merchant_OrderBook_Add_JSON = json.loads(Data)
-                except Exception as e:
-                    print("JSON Decoder couldnt Parse Request {}\nError: {}".format(Data, e))
-                    print("Request Ignored :(")
-                    return
-                #EndTry
-                #print("JSON was: \n{}\n of type: \n{}".format(Merchant_OrderBook_Add_JSON, type(Merchant_OrderBook_Add_JSON)))
+            #client Requested initial funds from miner
+            elif (Incoming_Data[0:3] == constants.MARKET_NEW_MERCHANT_REQUEST_STR):
 
-                #print("\n\nData: {}\n\n".format(Merchant_OrderBook_Add_JSON))
-                #print("json obj type: {}".format(type(Merchant_OrderBook_Add_JSON)))
+                #The request is in format: NEW:PUB_KEY
+                Merchant_Public_Key = Incoming_Data[4:]
 
                 #if Merchant doesnt Exists in ListOfUniqueMerchants
-                if (not(self.Check_if_Merchant_Exists_in_ExistingMerchant_List(Merchant_OrderBook_Add_JSON[constants.MERCHANT_PUBLIC_KEY_STR]))):
+                if (not(self.Check_if_Merchant_Exists_in_ExistingMerchant_List(Merchant_Public_Key))):
 
                     #Add Merchant to Existing Merchant List
                     self.Add_Merchant_to_ExistingMerchants_List(
-                        Merchant_OrderBook_Add_JSON[constants.MERCHANT_PUBLIC_KEY_STR],
+                        Merchant_Public_Key,
                         Client_Address
                     )
 
                     #Request Miner to give new merchant funds
-                    self.Request_Miner_to_give_New_Merchant_Funds(Merchant_OrderBook_Add_JSON[constants.MERCHANT_PUBLIC_KEY_STR])
-                    
-                #This isnt a new merchant
-                else:
-                    pass
+                    self.Request_Miner_to_give_New_Merchant_Funds(Merchant_Public_Key)
                 #EndIf
+
+            #client Requested to add bid into Orderbook
+            elif (Incoming_Data[0:3] == constants.MARKET_NEW_ORDER_REQUEST_STR):
+
+                #The request is in format: ODR:{MERCHANT_JSON_OBJ}
+                OrderBook_Request = Incoming_Data[4:]
+
+                try:
+                    Merchant_OrderBook_Add_JSON = dict(literal_eval(OrderBook_Request))
+                except Exception as e:
+                    print("OrderBook Decoder couldnt Parse Request {}\nError: {}".format(Incoming_Data, e))
+                    print("Request Ignored :(")
+                    return
+                #EndTry
 
                 #if Merchant doesnt Exists in OrderBook
                 if (not(self.Check_if_Merchant_Exists_in_OrderBook(Merchant_OrderBook_Add_JSON[constants.MERCHANT_PUBLIC_KEY_STR]))):
@@ -511,9 +482,9 @@ class Market:
                         Merchant_OrderBook_Add_JSON[constants.MERCHANT_COMODITY_STR],
                         Merchant_OrderBook_Add_JSON[constants.MERCHANT_PRICE_STR]
                     )
-                #A Merchant request already exists in orderbook
-                else:
-                    pass                   
+
+                    #Write Latest OrderBook Data to File
+                    self.Update_Orderbook_to_File()
                 #EndIf
             #EndIf
         #EndIf

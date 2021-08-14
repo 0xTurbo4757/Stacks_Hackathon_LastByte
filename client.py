@@ -10,33 +10,6 @@ import constants
 
 class Client:
 
-# --------------------------------- CONSTANTS
-
-    # MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
-    # CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
-    # DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
-    # UDP_DATA_BUFFER_SIZE = 32768                                #UDP Incomming data buffer size
-    # NEW_MERCHANT_FUND_AMOUNT = 100                              #Funds given to new merchants
-    # MINER_DEFAULT_ADDRESS = 0                                   #Default miner address
-
-    # USERDATABASE_FILE_NAME = "clients.json"                     #Filename of UserDataBase file
-    
-    # MERCHANT_USERNAME_STR = "m_Username"                        #JSON KEY: Merchant User Name
-    # MERCHANT_HASHED_USERNAME_STR = "m_HashedUsername"           #JSON KEY: Merchant Hashed User Name
-    # MERCHANT_PRIVATE_KEY_STR = "m_PrivKey"                      #JSON KEY: Merchant Private Key
-    # MERCHANT_PUBLIC_KEY_STR = "m_PubKey"                        #JSON KEY: Merchant Public Key
-    # MERCHANT_SIGNATURE_STR = "m_Sign"                           #JSON KEY: Merchant Signature
-    # MERCHANT_TYPE_STR = "m_Type"                                #JSON KEY: Merchant Type
-    # MERCHANT_COMODITY_STR = "m_Item"                            #JSON KEY: Merchant Item to sell/buy
-    # MERCHANT_PRICE_STR = "m_Price"                              #JSON KEY: Merchant Item Price
-    # MERCHANT_TYPE_BUYER_STR = "B"                               #JSON VAL: Merchant Type: Buyer
-    # MERCHANT_TYPE_SELLER_STR = "S"                              #JSON VAL: Merchant Type: Seller
-
-    # MINER_BLOCKCHAIN_PREVIOUS_HASH_STR = "PrevHash"             #
-    # MINER_BLOCKCHAIN_DATA_STR = "Data"                          #
-    # MINER_BLOCKCHAIN_NONCE_STR = "Nonce"                        #
-    # MINER_BLOCKCHAIN_COINBASE_STR = "CoinBase"                  #
-
 # --------------------------------- CONSTRUCTOR
 
     def __init__(self, market_ip, market_port, miner_ip, miner_port):
@@ -95,7 +68,7 @@ class Client:
 
             #If Merchant Recieved Funds
             if (receiver_key == merchant_public_key):
-                print("Merchant {} received {} from {}".format(receiver_key, amount_transfered, sender_key))
+                print("Merchant \n'{}'\nreceived {}'\nfrom\n'{}\n".format(receiver_key, amount_transfered, sender_key))
                 balance_given_to_merchant += int(amount_transfered)
             #EndIf
         #EndFor
@@ -152,7 +125,6 @@ class Client:
     
     #Encodes Data and sends to Market
     def Send_Data_to_Market(self, data_to_send):
-        #self.ClientForMarket_Socket.connect(self.ClientForMarket_SocketAddr)
         self.ClientForMarket_Socket.sendto(
             str(data_to_send).encode(constants.DATA_ENCODING_FORMAT),
             self.ClientForMarket_SocketAddr
@@ -169,15 +141,33 @@ class Client:
 
 # --------------------------------- UPDATERS
     
-    def Update_Current_OrderBook(self):
-        f = open("orderbook.txt","r")
-        new_orderbook = f.read()
-        f.close()
+    def Get_Latest_OrderBook_from_Market(self):
 
+        #Open File
+        OrderBook_File = open(constants.MARKET_ORDERBOOK_FILE_NAME, "r")
+        #Read OrderBook
+        New_OrderBook_RAW = OrderBook_File.read()
+        #Close File
+        OrderBook_File.close()
 
-        new_orderbook = list(eval(new_orderbook))
-        self.OrderBook = list(new_orderbook)
+        #OrderBook is Empty 
+        if (len(New_OrderBook_RAW) == 0):
+            #Update Current OrderBook
+            self.Update_Current_OrderBook(list())
+            return
+        #EndIf
+
+        #Parse the current OrderBook
+        New_OrderBook = literal_eval(New_OrderBook_RAW)
+
+        #Update Current OrderBook
+        self.Update_Current_OrderBook(New_OrderBook)
     #EndFunction
+
+    #
+    def Update_Current_OrderBook(self, new_orderbook):
+        self.OrderBook = list(new_orderbook)
+    #EndFunction    
 
     #
     def Update_Current_BlockChain(self, new_block_chain):
@@ -196,6 +186,14 @@ class Client:
     #This function is used in threading for constant update of BlockChain
     def Request_Latest_BlockChain_from_Miner(self):
         self.Send_Data_to_Miner(constants.MINER_BLOCKCHAIN_REQUEST_STR)
+    #EndFunction
+
+    def Request_Initial_Funds_from_Market(self):
+        request_str = constants.MARKET_NEW_MERCHANT_REQUEST_STR
+        request_str += ":"
+        request_str += self.Current_Client_Public_Key
+
+        self.Send_Data_to_Market(request_str)
     #EndFunction
 
 # --------------------------------- CONSOLE 
@@ -231,6 +229,9 @@ class Client:
 
         print("\nUser Succesfully Registered!\n")
 
+        #Request Market to assign us Initial Funds
+        self.Request_Initial_Funds_from_Market()
+
         self.Console_Delay(1)
     #EndFunction
 
@@ -247,16 +248,17 @@ class Client:
             #Received BlockChain asynchronously updated using threads
             self.Request_Latest_BlockChain_from_Miner()
 
-            #Request Market To Send Latest OrderBook
-            #Received OrderBook asynchronously updated using threads
-            #self.Request_Latest_OrderBook_from_Market()
-
             self.Console_ClearScreen()
+
+            print("User: {}".format(self.Current_Client_Username))
+            print("Type: {}\n".format(self.Current_Client_Type))
 
             # Menu 
             print("       Main Menu\n")
+
+
             print("1. View Current balance")
-            if (self.Current_Client_Type == "S"):
+            if (self.Current_Client_Type == constants.MERCHANT_TYPE_SELLER_STR):
                 print("2. Sell something")
             else:
                 print("2. Buy something")
@@ -273,13 +275,17 @@ class Client:
                 UserInput_Choice = int(input("\nEnter Choice Here: "))
             except:
                 print("Please input only integers!")
-                self.Console_Delay(2)
+                self.Console_Delay(1)
                 self.Console_ClearScreen()
                 continue
             #EndTry
 
             #View Current balance
             if (UserInput_Choice == 1):
+
+                #Request Miner To Send Latest BlockChain
+                #Received BlockChain asynchronously updated using threads
+                self.Request_Latest_BlockChain_from_Miner()
 
                 print("\nYour Current Balance is: {}".format(self.Get_Merchant_Current_Balance(self.Current_Client_Public_Key)))
 
@@ -291,7 +297,7 @@ class Client:
             #View Orderbook
             if (UserInput_Choice == 3):
 
-                self.Update_Current_OrderBook()
+                self.Get_Latest_OrderBook_from_Market()
                 self.Print_OrderBook()
             
             #View Current BlockChain
@@ -440,6 +446,9 @@ class Client:
     #Get User Type (Buyer or Seller) From User
     def Get_Valid_UserType_from_User(self):
         input_usertype = str(input("\nEnter 'B' if you're a Buyer or 'S' if a Seller: "))
+
+        #Get Uppercase
+        input_usertype = input_usertype.upper()
         
         while (input_usertype != "B" and input_usertype != "S"):
             print("\n[ERROR]: Enter 'B' or 'S' only!")
@@ -447,7 +456,11 @@ class Client:
         #EndWhile
 
         #Return UserType
-        return input_usertype
+        if (input_usertype == "B"):
+            return constants.MERCHANT_TYPE_BUYER_STR
+        else:
+            return constants.MERCHANT_TYPE_SELLER_STR
+        #EndIf
     #EndFunction
 
     #Generate Current User's RSA Keys
@@ -502,11 +515,15 @@ class Client:
     def Get_Signed_Request_Message_for_Market(self):
         Final_Signed_Market_Request_Message = {}
 
-        UserInput_Item_Name = str(input("Enter Your Item name Here: "))
+        UserInput_Item_Name = str(input("\nEnter Your Item name Here: "))
         UserInput_Item_Price = str(input("Enter Price For the Item Here: "))
 
+        #Request Format: ODR:{JSON}
+        Market_Request_Message_String = constants.MARKET_NEW_ORDER_REQUEST_STR
+        Market_Request_Message_String += ":"
+
         #BACKUP
-        Market_Request_Message_String = "{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\"}" % (
+        Market_Request_Message_String += "{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\"}" % (
             constants.MERCHANT_COMODITY_STR,
             UserInput_Item_Name,
             constants.MERCHANT_PRICE_STR,
@@ -598,13 +615,27 @@ class Client:
 
         index = 1
 
+        #New Line
+        print("")
+        print("OrderBook:\n")
+
+        print(' {0:^10} | {1:^10} | {2:^10} | {3:^10}'.format('Key','Type','Item', 'Price'))
+
         for current_order in self.OrderBook:
+
+            print(' {0:^10} | {1:^10} | {2:^10} | {3:^10}'.format(
+                ".." + current_order[constants.MERCHANT_PUBLIC_KEY_STR][-7:],   #Print Last 7 charecters of Public Key
+                current_order[constants.MERCHANT_TYPE_STR],
+                current_order[constants.MERCHANT_COMODITY_STR], 
+                current_order[constants.MERCHANT_PRICE_STR]
+                )
+            )
             
-            print("\nMerchant {}".format(index))
-            print("Merchant Type : {}".format(current_order[constants.MERCHANT_TYPE_STR]))
-            print("Merchant Key  : {}".format(current_order[constants.MERCHANT_PUBLIC_KEY_STR]))
-            print("Merchant Item : {}".format(current_order[constants.MERCHANT_COMODITY_STR]))
-            print("Merchant Price: {}".format(current_order[constants.MERCHANT_PRICE_STR]))
+            #print("\nMerchant {}".format(index))
+            # print("Merchant Key  : {}".format(current_order[constants.MERCHANT_PUBLIC_KEY_STR]))
+            # print("Merchant Type : {}".format(current_order[constants.MERCHANT_TYPE_STR]))
+            # print("Merchant Item : {}".format(current_order[constants.MERCHANT_COMODITY_STR]))
+            # print("Merchant Price: {}".format(current_order[constants.MERCHANT_PRICE_STR]))
 
             index += 1
         # EndFor

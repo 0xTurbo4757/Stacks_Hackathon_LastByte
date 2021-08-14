@@ -5,24 +5,6 @@ import constants
 
 class Miner:
 
-# --------------------------------- CONSTANTS
-
-    # MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
-    # CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
-    # DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
-    # UDP_DATA_BUFFER_SIZE = 32768                                #UDP Incomming data buffer size
-    # NEW_MERCHANT_FUND_AMOUNT = 100                              #Funds given to new merchants
-    # MINER_DEFAULT_ADDRESS = 0                                   #Default miner address
-
-    # MINER_MINING_DIFFICULTY_LEVEL = 3                           #
-
-    # MINER_BLOCKCHAIN_PREVIOUS_HASH_STR = "PrevHash"             #
-    # MINER_BLOCKCHAIN_DATA_STR = "Data"                          #
-    # MINER_BLOCKCHAIN_NONCE_STR = "Nonce"                        #
-    # MINER_BLOCKCHAIN_COINBASE_STR = "CoinBase"                  #
-
-    # MINER_BLOCKCHAIN_GENESIS_PREV_HASH = "0000000000000000000000000000000000000000000000000000000000000000"
-
 # --------------------------------- CONSTRUCTOR
 
     def __init__(self, server_ip, server_port):
@@ -142,7 +124,7 @@ class Miner:
             
             #Market sent TXN Request
             #Incomming_Data format must be: TXN:FROM_ADDR,TO_ADDR,AMOUNT
-            elif (Incomming_Data[0:3] == "TXN"):
+            elif (Incomming_Data[0:3] == constants.MINER_TXN_REQUEST_STR):
                 
                 print("\nGot TXN Request: {} from 'localhost:{}'".format(Incomming_Data, Client_Address[1]))
                 
@@ -154,26 +136,6 @@ class Miner:
                 #Initiate Mining
                 #print("New_Block_Add_Request was {}".format(self.New_Block_Add_Request))
                 self.Update_BlockChain()
-
-            #Market sent a New Merchant Request
-            #Incomming_Data format must be: NEW:PUB_ADDR
-            elif (Incomming_Data[0:3] == "NEW"):
-
-                print("\nGot NEW Merchant Request: {} from 'localhost:{}'".format(Incomming_Data, Client_Address[1]))
-                
-                #Form NEW Merchant Request
-                #Assume Market send a valid NEW in format: NEW:PUB_ADDR
-                #Pick up PUB_ADDR
-                self.New_Block_Add_Request = self.Generate_New_Block_Request(
-                    str(MINER_DEFAULT_ADDRESS),
-                    Incomming_Data[4:],
-                    str(NEW_MERCHANT_FUND_AMOUNT)
-                )
-                
-                #Initiate Mining
-                #print("New_Block_Add_Request was {}".format(self.New_Block_Add_Request))
-                self.Update_BlockChain()
-
             #EndIf
         #EndIf
     #EndFunction
