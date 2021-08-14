@@ -168,14 +168,12 @@ class Client:
     #                   Rcvs Data from Market
     def Get_Data_from_Market(self, sock_timout=None):
         try:
-            #self.ClientForMarket_Socket.setblocking(False)
-            self.ClientForMarket_Socket.settimeout(None)
             incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
             Data = incomming_UDP_Data[0].decode(Client.DATA_ENCODING_FORMAT)
             return ((Data, incomming_UDP_Data[1]))
 
-        except Exception as e:
-            print("\nException During Market Data Read: {}\n".format(e))
+        except:
+            #print("\nException During Market Data Read: {}\n".format(e))
             return ("", "")
         #EndTry
     #EndFunction
@@ -225,16 +223,13 @@ class Client:
         self.Send_Data_to_Market(Client.CLIENT_ORDERBOOK_REQUEST_STR)
     #EndFunction
 
-    def Handle_Incoming_OrderBook_from_Market(self):
+    def Handle_Incoming_OrderBook_from_Market_THREADED(self):
         while True:
             OrderBook_Data_RAW, Market_Addr = self.Get_Data_from_Market()
 
-            print("Received: '{}' from 'localhost:{}'".format(OrderBook_Data_RAW, Market_Addr[1]))
-            
             if (len(OrderBook_Data_RAW)):
-                #print("Received: '{}' from 'localhost:{}'".format(OrderBook_Data_RAW, Market_Addr[1]))
+                print("Received: '{}' from 'localhost:{}'".format(OrderBook_Data_RAW, Market_Addr[1]))
 
-                #Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
                 Updated_OrderBook = literal_eval(OrderBook_Data_RAW)
 
                 self.Update_Current_OrderBook(Updated_OrderBook)
@@ -304,6 +299,10 @@ class Client:
             #Received BlockChain asynchronously updated using threads
             self.Request_Latest_BlockChain_from_Miner()
 
+            #Request Market To Send Latest OrderBook
+            #Received OrderBook asynchronously updated using threads
+            self.Request_Latest_OrderBook_from_Market()
+
             self.Console_ClearScreen()
 
             # Menu 
@@ -344,9 +343,6 @@ class Client:
             #View Orderbook
             if (UserInput_Choice == 3):
 
-                self.Request_Latest_OrderBook_from_Market()
-                #self.Console_Delay(1)
-                self.Handle_Incoming_OrderBook_from_Market()
                 self.Print_OrderBook()
             
             #View Current BlockChain
@@ -600,25 +596,25 @@ class Client:
         UserInput_Item_Price = str(input("Enter Price For the Item Here: "))
 
         #BACKUP
-        # Market_Request_Message_String = "[{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\"}" % (
-        #     Client.MERCHANT_COMODITY_STR,
-        #     UserInput_Item_Name,
-        #     Client.MERCHANT_PRICE_STR,
-        #     UserInput_Item_Price,
-        #     Client.MERCHANT_PUBLIC_KEY_STR,
-        #     self.Current_Client_Public_Key,
-        #     Client.MERCHANT_TYPE_STR,
-        #     self.Current_Client_Type
-        # )
+        Market_Request_Message_String = "{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\"}" % (
+            Client.MERCHANT_COMODITY_STR,
+            UserInput_Item_Name,
+            Client.MERCHANT_PRICE_STR,
+            UserInput_Item_Price,
+            Client.MERCHANT_PUBLIC_KEY_STR,
+            self.Current_Client_Public_Key,
+            Client.MERCHANT_TYPE_STR,
+            self.Current_Client_Type
+        )
 
-        Market_Request_Message_Dict = {
-            Client.MERCHANT_COMODITY_STR : UserInput_Item_Name,
-            Client.MERCHANT_PRICE_STR : UserInput_Item_Price,
-            Client.MERCHANT_PUBLIC_KEY_STR : self.Current_Client_Public_Key,
-            Client.MERCHANT_TYPE_STR : self.Current_Client_Type
-        }
+        # Market_Request_Message_Dict = {
+        #     Client.MERCHANT_COMODITY_STR : UserInput_Item_Name,
+        #     Client.MERCHANT_PRICE_STR : UserInput_Item_Price,
+        #     Client.MERCHANT_PUBLIC_KEY_STR : self.Current_Client_Public_Key,
+        #     Client.MERCHANT_TYPE_STR : self.Current_Client_Type
+        # }
 
-        Signature = (self.Get_Digital_Signature_using_PrivateKey(Market_Request_Message_Dict))
+        #Signature = (self.Get_Digital_Signature_using_PrivateKey(Market_Request_Message_Dict))
 
         #print("\nSending Signature: {}\n\nType: {}".format(Signature, type(Signature)))
 
@@ -630,16 +626,16 @@ class Client:
         #     Signature
         # )
 
-        Final_Signed_Market_Request_Message = {
-            "m_msg" : Market_Request_Message_Dict,
-            Client.MERCHANT_SIGNATURE_STR : Signature
-        }
+        # Final_Signed_Market_Request_Message = {
+        #     "m_msg" : Market_Request_Message_Dict,
+        #     Client.MERCHANT_SIGNATURE_STR : Signature
+        # }
 
-        print("Final Dict: \n{}\n".format(Final_Signed_Market_Request_Message))
+        #print("Final Dict: \n{}\n".format(Final_Signed_Market_Request_Message))
 
         #Final_Signed_Market_Request_Message = Market_Request_Message_String + "," + Market_Request_Digital_Signature
 
-        return Final_Signed_Market_Request_Message
+        return Market_Request_Message_String
     #EndFunction
     #------------------------------------------------------------------------------------------------------------
 
@@ -648,7 +644,7 @@ class Client:
         #Main loop
         while True:
 
-            #self.Handle_New_User()
+            self.Handle_New_User()
 
             self.Handle_Main_Menu()
 
@@ -669,6 +665,11 @@ def main():
     Client_BlockChain_Update_THREAD = Thread(target=client.Handle_Incoming_BlockChain_from_Miner_THREADED)
     Client_BlockChain_Update_THREAD.daemon = True
     Client_BlockChain_Update_THREAD.start()
+
+    #Threading For OrderBook Update
+    Client_OrderBook_Update_THREAD = Thread(target=client.Handle_Incoming_OrderBook_from_Market_THREADED)
+    Client_OrderBook_Update_THREAD.daemon = True
+    Client_OrderBook_Update_THREAD.start()
 
     #Run The Client
     client.RunClient()

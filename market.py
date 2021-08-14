@@ -645,7 +645,7 @@ def main():
     
     market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
     #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
-    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
     #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
 
     #market.Request_Miner_to_give_New_Merchant_Funds("1")
