@@ -166,10 +166,12 @@ class Client:
 
 #---------------- Receiver Function (Market) ------------------
     #                   Rcvs Data from Market
-    def Get_Data_from_Market(self, sock_timout=None):
+    def Get_Data_from_Market(self):
+        print("Getting Data from Market")
         try:
             incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
             Data = incomming_UDP_Data[0].decode(Client.DATA_ENCODING_FORMAT)
+            print ("ORDERBOOK  = {%s}".format(Data))
             return ((Data, incomming_UDP_Data[1]))
 
         except:
@@ -225,6 +227,8 @@ class Client:
 
     def Handle_Incoming_OrderBook_from_Market_THREADED(self):
         while True:
+            self.Request_Latest_OrderBook_from_Market()
+            print("x")
             OrderBook_Data_RAW, Market_Addr = self.Get_Data_from_Market()
 
             if (len(OrderBook_Data_RAW)):
@@ -235,7 +239,7 @@ class Client:
                 self.Update_Current_OrderBook(Updated_OrderBook)
 
                 #exit once we receive our orderbook
-                break
+                #break
             #EndIf
         #EndWhile
     #EndFunction
