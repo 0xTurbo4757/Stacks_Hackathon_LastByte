@@ -316,7 +316,10 @@ class Market:
     # ----------------------------- SOCKET -----------------------------
     #SOCKET
     def Send_Data_to_Merchant(self, data_to_send, merchant_addr):
-        self.ServerForClient_Socket.sendto(data_to_send.encode(Market.DATA_ENCODING_FORMAT), merchant_addr)
+        self.ServerForClient_Socket.sendto(
+            str(data_to_send).encode(Market.DATA_ENCODING_FORMAT), 
+            merchant_addr
+        )
     #EndFunction
 
     #SOCKET
@@ -343,7 +346,10 @@ class Market:
 
     #SOCKET
     def Send_Data_to_Miner(self, data_to_send):
-        self.ClientForMiner_Socket.sendto(data_to_send.encode(Market.DATA_ENCODING_FORMAT), self.ClientForMiner_SocketAddr)
+        self.ClientForMiner_Socket.sendto(
+            str(data_to_send).encode(Market.DATA_ENCODING_FORMAT), 
+            self.ClientForMiner_SocketAddr
+        )
     #EndFunction
 
     #SOCKET
@@ -351,12 +357,9 @@ class Market:
     def Send_OrderBook_to_Merchant(self, merchant_addr):
         self.Send_Data_to_Merchant(
             #OrderBook
-            str(self.OrderBook),
+            self.OrderBook,
             #Address Tuple
-            (
-                merchant_addr[0],
-                merchant_addr[1]
-            )
+            merchant_addr
         )
     #EndFunction
 
@@ -478,7 +481,7 @@ class Market:
             #If Merchant Expects Latest OrderBook, send it to them
             if (Data == Market.CLIENT_ORDERBOOK_REQUEST_STR):
 
-                print("Sending OrderBook {} to Client {}".format(self.OrderBook, Client_Address[1]))
+                print("Sending OrderBook: \n{}\n\nto Client: {}".format(self.OrderBook, Client_Address))
                 self.Send_OrderBook_to_Merchant(Client_Address)
             else:
 
@@ -640,7 +643,7 @@ def main():
     client_port = 2500
     market = Market(ip, server_port, ip, client_port)
     
-    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
     #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
     #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
     #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")

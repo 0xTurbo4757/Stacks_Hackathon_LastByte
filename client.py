@@ -36,6 +36,7 @@ class Client:
         # Socket Handling As Client For market.py
         self.ClientForMarket_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.ClientForMarket_SocketAddr = (market_ip, market_port)
+        #self.ClientForMarket_Socket.settimeout(None)
         self.ClientForMarket_Socket.connect(self.ClientForMarket_SocketAddr)
 
         # Socket Handling As Client For miner.py
@@ -164,10 +165,11 @@ class Client:
     #                   Rcvs Data from Market
     def Get_Data_from_Market(self, sock_timout=None):
         try:
-            self.ClientForMarket_Socket.settimeout(sock_timout)
+            #self.ClientForMarket_Socket.settimeout(sock_timout)
             incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
             Data = incomming_UDP_Data[0].decode(Client.DATA_ENCODING_FORMAT)
             return ((Data, incomming_UDP_Data[1]))
+
         except Exception as e:
             print("\nException During Market Data Read: {}\n".format(e))
             return ("", "")
@@ -201,7 +203,7 @@ class Client:
 
 #------------------------------- Update variable with uptodate data---------------------------
     def Update_Current_OrderBook(self, new_orderbook):
-        self.OrderBook = new_orderbook
+        self.OrderBook = list(new_orderbook)
     #EndFunction
 
     #
@@ -217,11 +219,24 @@ class Client:
     #                       Updates the orderbook variable to latest Data
     def Request_Latest_OrderBook_from_Market(self):
         self.Send_Data_to_Market(Client.CLIENT_ORDERBOOK_REQUEST_STR)
-        received_data, market_addr = self.Get_Data_from_Market(2.0)
-        print("Received: '{}' from 'localhost:{}'".format(received_data, market_addr))
-        if (len(received_data)):
-            self.Update_Current_OrderBook(received_data)
-        #EndIf
+    #EndFunction
+
+    def Handle_Incoming_OrderBook_from_Market(self):
+        while True:
+            OrderBook_Data_RAW, Market_Addr = self.Get_Data_from_Market()
+            
+            if (len(OrderBook_Data_RAW)):
+                print("Received: '{}' from 'localhost:{}'".format(OrderBook_Data_RAW, Market_Addr[1]))
+
+                #Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
+                Updated_OrderBook = literal_eval(OrderBook_Data_RAW)
+
+                self.Update_Current_OrderBook(Updated_OrderBook)
+
+                #exit once we receive our orderbook
+                break
+            #EndIf
+        #EndWhile
     #EndFunction
 
     #SOCKET
@@ -324,6 +339,8 @@ class Client:
             if (UserInput_Choice == 3):
 
                 self.Request_Latest_OrderBook_from_Market()
+                #self.Console_Delay(1)
+                self.Handle_Incoming_OrderBook_from_Market()
                 self.Print_OrderBook()
             
             #View Current BlockChain
@@ -438,9 +455,6 @@ class Client:
     def Get_Hashed_Username(self, target_username):
         return hashFunction.getSHA(target_username, 5)
     #EndFunction
-
-
-
 
 #------------------------------------ Username validation----------------------------------------------------------------------------------------------
     #                           Checks for duplicate PublicKey
@@ -574,6 +588,7 @@ class Client:
             return False
         #EndIf
     #EndFunction
+    
     def Get_Signed_Request_Message_for_Market(self):
         Final_Signed_Market_Request_Message = {}
 
@@ -652,7 +667,13 @@ def main():
     Client_BlockChain_Update_THREAD.start()
 
     #Run The Client
-    client.RunClient()
+    #client.RunClient()
+
+    client.Request_Latest_OrderBook_from_Market()
+    #self.Console_Delay(1)
+    client.Handle_Incoming_OrderBook_from_Market()
+    client.Print_OrderBook()
+    exit()
 #EndMain
 
 if __name__ == "__main__":
