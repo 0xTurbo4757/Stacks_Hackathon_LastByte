@@ -33,7 +33,7 @@ class Market:
         # Socket Handling As Server For client.py
         self.ServerForClient_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.ServerForClient_Socket.bind((server_ip, server_port))
-        self.ServerForClient_Socket.settimeout(3.0)
+        self.ServerForClient_Socket.settimeout(2.0)
 
         # Socket Handling As Client For miner.py
         self.ClientForMiner_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -666,9 +666,27 @@ def main():
     Market_BlockChain_Update_THREAD.daemon = True
     Market_BlockChain_Update_THREAD.start()
 
+    #market.Send_Data_to_Miner("HELLO MINER!")
+
     #Run The market
     market.RunMarket()
-    #market.Send_Data_to_Miner("HELLO MINER!")
+
+    # while True:
+    #     print("\nListening for Client Request")
+    #     Data, Client_Address = market.Get_Data_from_Merchant()
+    #     if (len(Data)):
+    #         print("\n\nReceived Data: {}".format(Data))
+    #         print("From Addr    : {}\n".format(Client_Address))
+
+    #         #If Merchant Expects Latest OrderBook, send it to them
+    #         if (Data == Market.CLIENT_ORDERBOOK_REQUEST_STR):
+
+    #             print("Sending OrderBook: \n{}\n\nto Client: {}".format(market.OrderBook, Client_Address))
+    #             market.Send_OrderBook_to_Merchant(Client_Address)
+    #         #End
+    #     #EndIf
+    # #EndWhile
+
 # EndMain
 
 if __name__ == "__main__":

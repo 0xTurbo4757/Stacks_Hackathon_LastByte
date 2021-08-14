@@ -2,6 +2,7 @@ import socket
 import json
 import time
 import hashFunction
+import random
 from threading import Thread
 from ast import literal_eval
 from os import system
@@ -37,6 +38,7 @@ class Client:
         self.ClientForMarket_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.ClientForMarket_SocketAddr = (market_ip, market_port)
         #self.ClientForMarket_Socket.settimeout(None)
+        #self.ClientForMarket_Socket.bind(('', random.randint(10000, 50000)))
         self.ClientForMarket_Socket.connect(self.ClientForMarket_SocketAddr)
 
         # Socket Handling As Client For miner.py
@@ -153,6 +155,7 @@ class Client:
     #---------------- Sender function (Market) -------------------
     #                   Encodes and send to Market
     def Send_Data_to_Market(self, data_to_send):
+        #self.ClientForMarket_Socket.connect(self.ClientForMarket_SocketAddr)
         self.ClientForMarket_Socket.sendto(
             str(data_to_send).encode(Client.DATA_ENCODING_FORMAT),
             self.ClientForMarket_SocketAddr
@@ -165,7 +168,8 @@ class Client:
     #                   Rcvs Data from Market
     def Get_Data_from_Market(self, sock_timout=None):
         try:
-            #self.ClientForMarket_Socket.settimeout(sock_timout)
+            #self.ClientForMarket_Socket.setblocking(False)
+            self.ClientForMarket_Socket.settimeout(None)
             incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
             Data = incomming_UDP_Data[0].decode(Client.DATA_ENCODING_FORMAT)
             return ((Data, incomming_UDP_Data[1]))
@@ -224,9 +228,11 @@ class Client:
     def Handle_Incoming_OrderBook_from_Market(self):
         while True:
             OrderBook_Data_RAW, Market_Addr = self.Get_Data_from_Market()
+
+            print("Received: '{}' from 'localhost:{}'".format(OrderBook_Data_RAW, Market_Addr[1]))
             
             if (len(OrderBook_Data_RAW)):
-                print("Received: '{}' from 'localhost:{}'".format(OrderBook_Data_RAW, Market_Addr[1]))
+                #print("Received: '{}' from 'localhost:{}'".format(OrderBook_Data_RAW, Market_Addr[1]))
 
                 #Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
                 Updated_OrderBook = literal_eval(OrderBook_Data_RAW)
@@ -525,8 +531,6 @@ class Client:
     #EndFunction
     #----------------------------------------------------------------EndFunction------------------------------------------------------------------------------
 
-
-
     #-------------------------- User Type (Buyer or Seller) Handler ----------------------------------
     def Get_Valid_UserType_from_User(self):
         input_usertype = str(input("\nEnter 'B' if you're a Buyer or 'S' if a Seller: "))
@@ -644,7 +648,7 @@ class Client:
         #Main loop
         while True:
 
-            self.Handle_New_User()
+            #self.Handle_New_User()
 
             self.Handle_Main_Menu()
 
@@ -667,13 +671,15 @@ def main():
     Client_BlockChain_Update_THREAD.start()
 
     #Run The Client
-    #client.RunClient()
+    client.RunClient()
+    # while True:
 
-    client.Request_Latest_OrderBook_from_Market()
-    #self.Console_Delay(1)
-    client.Handle_Incoming_OrderBook_from_Market()
-    client.Print_OrderBook()
-    exit()
+    #     print("\nSock Details: {}\n".format(client.ClientForMarket_Socket.getsockname()))
+    #     client.Request_Latest_OrderBook_from_Market()
+    #     client.Handle_Incoming_OrderBook_from_Market()
+    #     client.Print_OrderBook()
+    # #EndWhile
+
 #EndMain
 
 if __name__ == "__main__":

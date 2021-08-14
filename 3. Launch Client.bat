@@ -1,3 +1,3 @@
 @echo off
-start
+py client.py
 exit
