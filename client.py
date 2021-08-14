@@ -6,30 +6,36 @@ import random
 from threading import Thread
 from ast import literal_eval
 from os import system
+import constants
 
 class Client:
 
 # --------------------------------- CONSTANTS
 
-    MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
-    CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
-    DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
-    UDP_DATA_BUFFER_SIZE = 8192                                 #UDP Incomming data buffer size
-    NEW_MERCHANT_FUND_AMOUNT = 100                              #Funds given to new merchants
-    MINER_DEFAULT_ADDRESS = 0                                   #Default miner address
+    # MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
+    # CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
+    # DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
+    # UDP_DATA_BUFFER_SIZE = 32768                                #UDP Incomming data buffer size
+    # NEW_MERCHANT_FUND_AMOUNT = 100                              #Funds given to new merchants
+    # MINER_DEFAULT_ADDRESS = 0                                   #Default miner address
 
-    USERDATABASE_FILE_NAME = "clients.json"                     #Filename of UserDataBase file
+    # USERDATABASE_FILE_NAME = "clients.json"                     #Filename of UserDataBase file
     
-    MERCHANT_USERNAME_STR = "m_Username"                        #JSON KEY: Merchant User Name
-    MERCHANT_HASHED_USERNAME_STR = "m_HashedUsername"           #JSON KEY: Merchant Hashed User Name
-    MERCHANT_PRIVATE_KEY_STR = "m_PrivKey"                      #JSON KEY: Merchant Private Key
-    MERCHANT_PUBLIC_KEY_STR = "m_PubKey"                        #JSON KEY: Merchant Public Key
-    MERCHANT_SIGNATURE_STR = "m_Sign"                           #JSON KEY: Merchant Signature
-    MERCHANT_TYPE_STR = "m_Type"                                #JSON KEY: Merchant Type
-    MERCHANT_COMODITY_STR = "m_Item"                            #JSON KEY: Merchant Item to sell/buy
-    MERCHANT_PRICE_STR = "m_Price"                              #JSON KEY: Merchant Item Price
-    MERCHANT_TYPE_BUYER_STR = "B"                               #JSON VAL: Merchant Type: Buyer
-    MERCHANT_TYPE_SELLER_STR = "S"                              #JSON VAL: Merchant Type: Seller
+    # MERCHANT_USERNAME_STR = "m_Username"                        #JSON KEY: Merchant User Name
+    # MERCHANT_HASHED_USERNAME_STR = "m_HashedUsername"           #JSON KEY: Merchant Hashed User Name
+    # MERCHANT_PRIVATE_KEY_STR = "m_PrivKey"                      #JSON KEY: Merchant Private Key
+    # MERCHANT_PUBLIC_KEY_STR = "m_PubKey"                        #JSON KEY: Merchant Public Key
+    # MERCHANT_SIGNATURE_STR = "m_Sign"                           #JSON KEY: Merchant Signature
+    # MERCHANT_TYPE_STR = "m_Type"                                #JSON KEY: Merchant Type
+    # MERCHANT_COMODITY_STR = "m_Item"                            #JSON KEY: Merchant Item to sell/buy
+    # MERCHANT_PRICE_STR = "m_Price"                              #JSON KEY: Merchant Item Price
+    # MERCHANT_TYPE_BUYER_STR = "B"                               #JSON VAL: Merchant Type: Buyer
+    # MERCHANT_TYPE_SELLER_STR = "S"                              #JSON VAL: Merchant Type: Seller
+
+    # MINER_BLOCKCHAIN_PREVIOUS_HASH_STR = "PrevHash"             #
+    # MINER_BLOCKCHAIN_DATA_STR = "Data"                          #
+    # MINER_BLOCKCHAIN_NONCE_STR = "Nonce"                        #
+    # MINER_BLOCKCHAIN_COINBASE_STR = "CoinBase"                  #
 
 # --------------------------------- CONSTRUCTOR
 
@@ -85,7 +91,7 @@ class Client:
             current_block = self.BlockChain[str(current_block_iterator)]
 
             #Extract Data out of current block
-            sender_key,receiver_key,amount_transfered = self.Extract_Data_from_BlockChain_BlockData(current_block["Data"])
+            sender_key,receiver_key,amount_transfered = self.Extract_Data_from_BlockChain_BlockData(current_block[constants.MINER_BLOCKCHAIN_DATA_STR])
 
             #If Merchant Recieved Funds
             if (receiver_key == merchant_public_key):
@@ -101,7 +107,7 @@ class Client:
             current_block = self.BlockChain[str(current_block_iterator)]
 
             #Extract Data out of current block
-            sender_key,receiver_key,amount_transfered = self.Extract_Data_from_BlockChain_BlockData(current_block["Data"])
+            sender_key,receiver_key,amount_transfered = self.Extract_Data_from_BlockChain_BlockData(current_block[constants.MINER_BLOCKCHAIN_DATA_STR])
 
             #If Merchant Sent Funds
             if (sender_key == merchant_public_key):
@@ -122,8 +128,8 @@ class Client:
     #Receives Data from Market
     def Get_Data_from_Market(self):
         try:
-            incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
-            Data = incomming_UDP_Data[0].decode(Client.DATA_ENCODING_FORMAT)
+            incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(constants.UDP_DATA_BUFFER_SIZE)
+            Data = incomming_UDP_Data[0].decode(constants.DATA_ENCODING_FORMAT)
             return ((Data, incomming_UDP_Data[1]))
         except:
             #print("\nException During Market Data Read: {}\n".format(e))
@@ -134,8 +140,8 @@ class Client:
     #Receives Data from Miner
     def Get_Data_from_Miner(self):
         try:
-            incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
-            Data = incomming_UDP_Data[0].decode(Client.DATA_ENCODING_FORMAT)
+            incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(constants.UDP_DATA_BUFFER_SIZE)
+            Data = incomming_UDP_Data[0].decode(constants.DATA_ENCODING_FORMAT)
             return ((Data, incomming_UDP_Data[1]))
         except:
             return ("", "")
@@ -148,7 +154,7 @@ class Client:
     def Send_Data_to_Market(self, data_to_send):
         #self.ClientForMarket_Socket.connect(self.ClientForMarket_SocketAddr)
         self.ClientForMarket_Socket.sendto(
-            str(data_to_send).encode(Client.DATA_ENCODING_FORMAT),
+            str(data_to_send).encode(constants.DATA_ENCODING_FORMAT),
             self.ClientForMarket_SocketAddr
         )
     #EndFunction
@@ -156,7 +162,7 @@ class Client:
     #Encodes Data and sends to Miner
     def Send_Data_to_Miner(self, data_to_send):
         self.ClientForMiner_Socket.sendto(
-            data_to_send.encode(Client.DATA_ENCODING_FORMAT), 
+            data_to_send.encode(constants.DATA_ENCODING_FORMAT), 
             self.ClientForMiner_SocketAddr
         )
     #EndFunction
@@ -177,13 +183,13 @@ class Client:
     #Requests market to send latest OrderBook
     #This function is used in threading for constant update of OrderBook
     def Request_Latest_OrderBook_from_Market(self):
-        self.Send_Data_to_Market(Client.CLIENT_ORDERBOOK_REQUEST_STR)
+        self.Send_Data_to_Market(constants.CLIENT_ORDERBOOK_REQUEST_STR)
     #EndFunction
 
     #Requests miner to send latest BlockChain
     #This function is used in threading for constant update of BlockChain
     def Request_Latest_BlockChain_from_Miner(self):
-        self.Send_Data_to_Miner(Client.MINER_BLOCKCHAIN_REQUEST_STR)
+        self.Send_Data_to_Miner(constants.MINER_BLOCKCHAIN_REQUEST_STR)
     #EndFunction
 
 # --------------------------------- CONSOLE 
@@ -323,7 +329,7 @@ class Client:
     
     def Handle_Incoming_BlockChain_from_Miner_THREADED(self):
         while True:
-            print("\nAttempting Data Read From Miner..")
+            #print("\nAttempting Data Read From Miner..")
             BlockChain_Data_RAW, Miner_Address = self.Get_Data_from_Miner()
             
             if (len(BlockChain_Data_RAW)):
@@ -365,22 +371,22 @@ class Client:
 
         #Try to Open User DataBase File
         try:
-            UserDataBaseFile = open(Client.USERDATABASE_FILE_NAME, "r")
+            UserDataBaseFile = open(constants.USERDATABASE_FILE_NAME, "r")
         except (FileNotFoundError):
             #No File exists
-            print("\n[INFO]: UserDataBase file '{}' doesnt exist!\nMaking a new one...\n".format(Client.USERDATABASE_FILE_NAME))
+            print("\n[INFO]: UserDataBase file '{}' doesnt exist!\nMaking a new one...\n".format(constants.USERDATABASE_FILE_NAME))
 
             #Create the file
-            NEW_UserDataBaseFile = open(Client.USERDATABASE_FILE_NAME, "w")
+            NEW_UserDataBaseFile = open(constants.USERDATABASE_FILE_NAME, "w")
             #Close it immediately because we dont want to write any data to it
             NEW_UserDataBaseFile.close()
 
             #Try opening the file again
             try:
-                UserDataBaseFile = open(Client.USERDATABASE_FILE_NAME, "r")
+                UserDataBaseFile = open(constants.USERDATABASE_FILE_NAME, "r")
             except Exception as e:
                 #This shouldnt have happened
-                print("\n[ERROR]: {} Attempted to create UserDataBase file '{}' failed!!\nExact Error: {}\nExiting\n".format(Client.USERDATABASE_FILE_NAME, e))
+                print("\n[ERROR]: {} Attempted to create UserDataBase file '{}' failed!!\nExact Error: {}\nExiting\n".format(constants.USERDATABASE_FILE_NAME, e))
                 #We cant continue, we needa die :(
                 exit()
             #EndTry
@@ -400,7 +406,7 @@ class Client:
             #Iterate through database to check if username already exists
             for current_line in UserDataBaseFile:
                 current_user_entry_JSON = json.loads(current_line)
-                if current_user_entry_JSON[Client.MERCHANT_HASHED_USERNAME_STR] == target_hashed_username:
+                if current_user_entry_JSON[constants.MERCHANT_HASHED_USERNAME_STR] == target_hashed_username:
                     valid_username_found = False
                     break
                 #EndIf
@@ -446,14 +452,14 @@ class Client:
     #Write Userinfo onto the UserDataBase JSON file
     def Update_UserDataBase_File(self):
         # Store into json file
-        UserDataBaseFile = open(Client.USERDATABASE_FILE_NAME, "a")
+        UserDataBaseFile = open(constants.USERDATABASE_FILE_NAME, "a")
 
         Database_Entry = {
-            Client.MERCHANT_USERNAME_STR : self.Current_Client_Username,
-            Client.MERCHANT_HASHED_USERNAME_STR : self.Current_Client_HashedUsername,
-            Client.MERCHANT_PUBLIC_KEY_STR : self.Current_Client_Public_Key,
-            Client.MERCHANT_PRIVATE_KEY_STR : self.Current_Client_Private_Key,
-            Client.MERCHANT_TYPE_STR : self.Current_Client_Type,
+            constants.MERCHANT_USERNAME_STR : self.Current_Client_Username,
+            constants.MERCHANT_HASHED_USERNAME_STR : self.Current_Client_HashedUsername,
+            constants.MERCHANT_PUBLIC_KEY_STR : self.Current_Client_Public_Key,
+            constants.MERCHANT_PRIVATE_KEY_STR : self.Current_Client_Private_Key,
+            constants.MERCHANT_TYPE_STR : self.Current_Client_Type,
         }
 
         #Write to file
@@ -494,21 +500,21 @@ class Client:
 
         #BACKUP
         Market_Request_Message_String = "{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":\"%s\"}" % (
-            Client.MERCHANT_COMODITY_STR,
+            constants.MERCHANT_COMODITY_STR,
             UserInput_Item_Name,
-            Client.MERCHANT_PRICE_STR,
+            constants.MERCHANT_PRICE_STR,
             UserInput_Item_Price,
-            Client.MERCHANT_PUBLIC_KEY_STR,
+            constants.MERCHANT_PUBLIC_KEY_STR,
             self.Current_Client_Public_Key,
-            Client.MERCHANT_TYPE_STR,
+            constants.MERCHANT_TYPE_STR,
             self.Current_Client_Type
         )
 
         # Market_Request_Message_Dict = {
-        #     Client.MERCHANT_COMODITY_STR : UserInput_Item_Name,
-        #     Client.MERCHANT_PRICE_STR : UserInput_Item_Price,
-        #     Client.MERCHANT_PUBLIC_KEY_STR : self.Current_Client_Public_Key,
-        #     Client.MERCHANT_TYPE_STR : self.Current_Client_Type
+        #     constants.MERCHANT_COMODITY_STR : UserInput_Item_Name,
+        #     constants.MERCHANT_PRICE_STR : UserInput_Item_Price,
+        #     constants.MERCHANT_PUBLIC_KEY_STR : self.Current_Client_Public_Key,
+        #     constants.MERCHANT_TYPE_STR : self.Current_Client_Type
         # }
 
         #Signature = (self.Get_Digital_Signature_using_PrivateKey(Market_Request_Message_Dict))
@@ -519,13 +525,13 @@ class Client:
 
         #BACKUP
         # Market_Request_Digital_Signature = "{\"%s\":\"%s\"}]" % (
-        #     Client.MERCHANT_SIGNATURE_STR,
+        #     constants.MERCHANT_SIGNATURE_STR,
         #     Signature
         # )
 
         # Final_Signed_Market_Request_Message = {
         #     "m_msg" : Market_Request_Message_Dict,
-        #     Client.MERCHANT_SIGNATURE_STR : Signature
+        #     constants.MERCHANT_SIGNATURE_STR : Signature
         # }
 
         #print("Final Dict: \n{}\n".format(Final_Signed_Market_Request_Message))
@@ -586,10 +592,10 @@ class Client:
         index = 1
         for current_order in self.OrderBook:
             print("\nMerchant {}".format(index))
-            print("Merchant Type : {}".format(current_order[Client.MERCHANT_TYPE_STR]))
-            print("Merchant Key  : {}".format(current_order[Client.MERCHANT_PUBLIC_KEY_STR]))
-            print("Merchant Item : {}".format(current_order[Client.MERCHANT_COMODITY_STR]))
-            print("Merchant Price: {}".format(current_order[Client.MERCHANT_PRICE_STR]))
+            print("Merchant Type : {}".format(current_order[constants.MERCHANT_TYPE_STR]))
+            print("Merchant Key  : {}".format(current_order[constants.MERCHANT_PUBLIC_KEY_STR]))
+            print("Merchant Item : {}".format(current_order[constants.MERCHANT_COMODITY_STR]))
+            print("Merchant Price: {}".format(current_order[constants.MERCHANT_PRICE_STR]))
 
             index += 1
         # EndFor

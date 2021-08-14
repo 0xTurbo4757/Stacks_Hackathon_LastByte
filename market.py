@@ -3,30 +3,38 @@ import socket
 import json
 from ast import literal_eval
 from threading import Thread
+import constants
 
 class Market:
 
 # --------------------------------- CONSTANTS
 
-    MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
-    CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
-    DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
-    UDP_DATA_BUFFER_SIZE = 8192                                 #UDP Incomming data buffer size
-    NEW_MERCHANT_FUND_AMOUNT = 100                              #Funds given to new merchants
-    MINER_DEFAULT_ADDRESS = 0                                   #Default miner address
+    # MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
+    # CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
+    # DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
+    # UDP_DATA_BUFFER_SIZE = 32768                                #UDP Incomming data buffer size
+    # NEW_MERCHANT_FUND_AMOUNT = 100                              #Funds given to new merchants
+    # MINER_DEFAULT_ADDRESS = 0                                   #Default miner address
 
-    USERDATABASE_FILE_NAME = "clients.json"                     #Filename of UserDataBase file
+    # USERDATABASE_FILE_NAME = "clients.json"                     #Filename of UserDataBase file
     
-    MERCHANT_USERNAME_STR = "m_Username"                        #JSON KEY: Merchant User Name
-    MERCHANT_HASHED_USERNAME_STR = "m_HashedUsername"           #JSON KEY: Merchant Hashed User Name
-    MERCHANT_PRIVATE_KEY_STR = "m_PrivKey"                      #JSON KEY: Merchant Private Key
-    MERCHANT_PUBLIC_KEY_STR = "m_PubKey"                        #JSON KEY: Merchant Public Key
-    MERCHANT_SIGNATURE_STR = "m_Sign"                           #JSON KEY: Merchant Signature
-    MERCHANT_TYPE_STR = "m_Type"                                #JSON KEY: Merchant Type
-    MERCHANT_COMODITY_STR = "m_Item"                            #JSON KEY: Merchant Item to sell/buy
-    MERCHANT_PRICE_STR = "m_Price"                              #JSON KEY: Merchant Item Price
-    MERCHANT_TYPE_BUYER_STR = "B"                               #JSON VAL: Merchant Type: Buyer
-    MERCHANT_TYPE_SELLER_STR = "S"                              #JSON VAL: Merchant Type: Seller
+    # MERCHANT_USERNAME_STR = "m_Username"                        #JSON KEY: Merchant User Name
+    # MERCHANT_HASHED_USERNAME_STR = "m_HashedUsername"           #JSON KEY: Merchant Hashed User Name
+    # MERCHANT_PRIVATE_KEY_STR = "m_PrivKey"                      #JSON KEY: Merchant Private Key
+    # MERCHANT_PUBLIC_KEY_STR = "m_PubKey"                        #JSON KEY: Merchant Public Key
+    # MERCHANT_SIGNATURE_STR = "m_Sign"                           #JSON KEY: Merchant Signature
+    # MERCHANT_TYPE_STR = "m_Type"                                #JSON KEY: Merchant Type
+    # MERCHANT_COMODITY_STR = "m_Item"                            #JSON KEY: Merchant Item to sell/buy
+    # MERCHANT_PRICE_STR = "m_Price"                              #JSON KEY: Merchant Item Price
+    # MERCHANT_IP_STR = "m_nIP"                                   #JSON KEY: Merchant IP Address
+    # MERCHANT_PORT_STR = "m_nPort"                               #JSON KEY: Merchant Port
+    # MERCHANT_TYPE_BUYER_STR = "B"                               #JSON VAL: Merchant Type: Buyer
+    # MERCHANT_TYPE_SELLER_STR = "S"                              #JSON VAL: Merchant Type: Seller
+
+    # MINER_BLOCKCHAIN_PREVIOUS_HASH_STR = "PrevHash"             #
+    # MINER_BLOCKCHAIN_DATA_STR = "Data"                          #
+    # MINER_BLOCKCHAIN_NONCE_STR = "Nonce"                        #
+    # MINER_BLOCKCHAIN_COINBASE_STR = "CoinBase"                  #
 
 # --------------------------------- CONSTRUCTOR
 
@@ -35,7 +43,7 @@ class Market:
         # Socket Handling As Server For client.py
         self.ServerForClient_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.ServerForClient_Socket.bind((server_ip, server_port))
-        #self.ServerForClient_Socket.settimeout(2.0)
+        self.ServerForClient_Socket.settimeout(1.0)
 
         # Socket Handling As Client For miner.py
         self.ClientForMiner_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -64,10 +72,10 @@ class Market:
 
         self.OrderBook.append(
             {
-                Market.MERCHANT_TYPE_STR: merchant_type,
-                Market.MERCHANT_PUBLIC_KEY_STR : merchant_public_key,
-                Market.MERCHANT_COMODITY_STR: comodity_to_sell,
-                Market.MERCHANT_PRICE_STR: comodity_price
+                constants.MERCHANT_TYPE_STR: merchant_type,
+                constants.MERCHANT_PUBLIC_KEY_STR : merchant_public_key,
+                constants.MERCHANT_COMODITY_STR: comodity_to_sell,
+                constants.MERCHANT_PRICE_STR: comodity_price
             }
         )
     # EndFunction
@@ -77,7 +85,7 @@ class Market:
         index = 0
         for current_merchant in self.OrderBook:
 
-            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
+            if (current_merchant[constants.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
                 return index
             #EndIf
 
@@ -90,7 +98,7 @@ class Market:
 
     def Check_if_Merchant_Exists_in_OrderBook(self, merchant_public_key):
         for current_merchant in self.OrderBook:
-            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
+            if (current_merchant[constants.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
                 return True
             #EndIf
         #EndFor
@@ -103,7 +111,7 @@ class Market:
     def Get_Merchant_Data_from_OrderBook(self, target_merchant_public_key):
         for current_merchant in self.OrderBook:
 
-            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == target_merchant_public_key):
+            if (current_merchant[constants.MERCHANT_PUBLIC_KEY_STR] == target_merchant_public_key):
                 return current_merchant
             #EndIf
         #EndFor
@@ -127,9 +135,9 @@ class Market:
 
         self.ExistingMerchantList.append(
             {
-                Market.MERCHANT_PUBLIC_KEY_STR : merchant_public_key,
-                Market.MERCHANT_IP_STR : merchant_network_addr[0],
-                Market.MERCHANT_PORT_STR : merchant_network_addr[1]
+                constants.MERCHANT_PUBLIC_KEY_STR : merchant_public_key,
+                constants.MERCHANT_IP_STR : merchant_network_addr[0],
+                constants.MERCHANT_PORT_STR : merchant_network_addr[1]
             }
         )
     #EndFunction
@@ -137,7 +145,7 @@ class Market:
     def Get_Merchant_Data_from_ExistingMerchants_List(self, merchant_public_key):
         for current_merchant in self.ExistingMerchantList:
 
-            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
+            if (current_merchant[constants.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
                 return current_merchant
             #EndIf
         #EndFor
@@ -150,7 +158,7 @@ class Market:
 
         for current_merchant in self.ExistingMerchantList:
 
-            if (current_merchant[Market.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
+            if (current_merchant[constants.MERCHANT_PUBLIC_KEY_STR] == merchant_public_key):
 
                 #Merchant found
                 return True
@@ -175,7 +183,7 @@ class Market:
             current_block = self.BlockChain[str(current_block_iterator)]
 
             #Extract Data out of current block
-            sender_key,receiver_key,amount_transfered = self.Extract_Data_from_BlockChain_BlockData(current_block["Data"])
+            sender_key,receiver_key,amount_transfered = self.Extract_Data_from_BlockChain_BlockData(current_block[constants.MINER_BLOCKCHAIN_DATA_STR])
 
             #If Merchant Recieved Funds
             if (receiver_key == merchant_public_key):
@@ -191,7 +199,7 @@ class Market:
             current_block = self.BlockChain[str(current_block_iterator)]
 
             #Extract Data out of current block
-            sender_key,receiver_key,amount_transfered = self.Extract_Data_from_BlockChain_BlockData(current_block["Data"])
+            sender_key,receiver_key,amount_transfered = self.Extract_Data_from_BlockChain_BlockData(current_block[constants.MINER_BLOCKCHAIN_DATA_STR])
 
             #If Merchant Sent Funds
             if (sender_key == merchant_public_key):
@@ -232,39 +240,39 @@ class Market:
             for internal_order_iterator in range(1, len(self.OrderBook)):
 
                 #If current Order type matches the other order type in the order list
-                if (external_order_iterator[Market.MERCHANT_COMODITY_STR] == self.OrderBook[internal_order_iterator][Market.MERCHANT_COMODITY_STR]):
+                if (external_order_iterator[constants.MERCHANT_COMODITY_STR] == self.OrderBook[internal_order_iterator][constants.MERCHANT_COMODITY_STR]):
 
                     #If External Iterator is Buyer
-                    if (external_order_iterator[Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_BUYER_STR):
+                    if (external_order_iterator[constants.MERCHANT_TYPE_STR] == constants.MERCHANT_TYPE_BUYER_STR):
 
                         #If Internal Iterator is a Buyer
-                        if (self.OrderBook[internal_order_iterator][Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_BUYER_STR):
+                        if (self.OrderBook[internal_order_iterator][constants.MERCHANT_TYPE_STR] == constants.MERCHANT_TYPE_BUYER_STR):
 
                             #Do nothing, its just a buyer vs buyer
                             pass
 
                         #If Internal Iterator is a Seller
-                        elif (self.OrderBook[internal_order_iterator][Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_SELLER_STR):
+                        elif (self.OrderBook[internal_order_iterator][constants.MERCHANT_TYPE_STR] == constants.MERCHANT_TYPE_SELLER_STR):
 
                             #TXN if Buyer Price >= Seller
-                            if (external_order_iterator[Market.MERCHANT_PRICE_STR] >= self.OrderBook[internal_order_iterator][Market.MERCHANT_PRICE_STR]):
-                                potential_TXNs.append((external_order_iterator[Market.MERCHANT_PUBLIC_KEY_STR], self.OrderBook[internal_order_iterator][Market.MERCHANT_PUBLIC_KEY_STR]))
+                            if (external_order_iterator[constants.MERCHANT_PRICE_STR] >= self.OrderBook[internal_order_iterator][constants.MERCHANT_PRICE_STR]):
+                                potential_TXNs.append((external_order_iterator[constants.MERCHANT_PUBLIC_KEY_STR], self.OrderBook[internal_order_iterator][constants.MERCHANT_PUBLIC_KEY_STR]))
                             #EndIf
                         #EndIf
 
                     #If External Iterator is Seller
-                    elif (external_order_iterator[Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_SELLER_STR):
+                    elif (external_order_iterator[constants.MERCHANT_TYPE_STR] == constants.MERCHANT_TYPE_SELLER_STR):
 
                         #If Internal Iterator is a Buyer
-                        if (self.OrderBook[internal_order_iterator][Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_BUYER_STR):
+                        if (self.OrderBook[internal_order_iterator][constants.MERCHANT_TYPE_STR] == constants.MERCHANT_TYPE_BUYER_STR):
 
                             #TXN if Buyer Price >= Seller
-                            if (self.OrderBook[internal_order_iterator][Market.MERCHANT_PRICE_STR] >= external_order_iterator[Market.MERCHANT_PRICE_STR]):
-                                potential_TXNs.append((external_order_iterator[Market.MERCHANT_PUBLIC_KEY_STR], self.OrderBook[internal_order_iterator][Market.MERCHANT_PUBLIC_KEY_STR]))
+                            if (self.OrderBook[internal_order_iterator][constants.MERCHANT_PRICE_STR] >= external_order_iterator[constants.MERCHANT_PRICE_STR]):
+                                potential_TXNs.append((external_order_iterator[constants.MERCHANT_PUBLIC_KEY_STR], self.OrderBook[internal_order_iterator][constants.MERCHANT_PUBLIC_KEY_STR]))
                             #EndIf
                         
                         #If Internal Iterator is a Seller
-                        elif (self.OrderBook[internal_order_iterator][Market.MERCHANT_TYPE_STR] == Market.MERCHANT_TYPE_SELLER_STR):
+                        elif (self.OrderBook[internal_order_iterator][constants.MERCHANT_TYPE_STR] == constants.MERCHANT_TYPE_SELLER_STR):
 
                             #Do nothing, its just a Seller vs Seller
                             pass
@@ -274,6 +282,8 @@ class Market:
             #EndFor
         #EndFor
 
+        print("Potential TXN: \n{}\n".format(potential_TXNs))
+
         #Return all possible TXNs
         return potential_TXNs
     # EndFunction    
@@ -282,8 +292,8 @@ class Market:
 
     def Get_Data_from_Merchant(self):
         try:
-            incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(Market.UDP_DATA_BUFFER_SIZE)
-            Data = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
+            incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(constants.UDP_DATA_BUFFER_SIZE)
+            Data = incomming_UDP_Data[0].decode(constants.DATA_ENCODING_FORMAT)
             return ((Data, incomming_UDP_Data[1]))
         except:
             return ("", "")
@@ -292,8 +302,8 @@ class Market:
 
     def Get_Data_from_Miner(self):
         try:
-            incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(Market.UDP_DATA_BUFFER_SIZE)
-            Data = incomming_UDP_Data[0].decode(Market.DATA_ENCODING_FORMAT)
+            incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(constants.UDP_DATA_BUFFER_SIZE)
+            Data = incomming_UDP_Data[0].decode(constants.DATA_ENCODING_FORMAT)
             return ((Data, incomming_UDP_Data[1]))
         except:
             return ("", "")
@@ -304,14 +314,14 @@ class Market:
 
     def Send_Data_to_Merchant(self, data_to_send, merchant_addr):
         self.ServerForClient_Socket.sendto(
-            str(data_to_send).encode(Market.DATA_ENCODING_FORMAT), 
+            str(data_to_send).encode(constants.DATA_ENCODING_FORMAT), 
             merchant_addr
         )
     #EndFunction
 
     def Send_Data_to_Miner(self, data_to_send):
         self.ClientForMiner_Socket.sendto(
-            str(data_to_send).encode(Market.DATA_ENCODING_FORMAT), 
+            str(data_to_send).encode(constants.DATA_ENCODING_FORMAT), 
             self.ClientForMiner_SocketAddr
         )
     #EndFunction
@@ -335,7 +345,7 @@ class Market:
         #EndIf
 
         #Send OrderBook
-        self.Send_OrderBook_to_Merchant((target_merchant[Market.MERCHANT_IP_STR], target_merchant[Market.MERCHANT_PORT_STR]))
+        self.Send_OrderBook_to_Merchant((target_merchant[constants.MERCHANT_IP_STR], target_merchant[constants.MERCHANT_PORT_STR]))
     #EndFunction
 
 # --------------------------------- UPDATERS
@@ -362,15 +372,15 @@ class Market:
     #EndFunction
 
     def Request_Latest_BlockChain_from_Miner(self):
-        self.Send_Data_to_Miner(Market.MINER_BLOCKCHAIN_REQUEST_STR)
+        self.Send_Data_to_Miner(constants.MINER_BLOCKCHAIN_REQUEST_STR)
     #EndFunction
 
     def Request_Miner_to_give_New_Merchant_Funds(self, merchant_public_key):
         self.Request_Miner_to_Add_TXN_to_BlockChain(
             (
-                Market.MINER_DEFAULT_ADDRESS,
+                constants.MINER_DEFAULT_ADDRESS,
                 merchant_public_key,
-                Market.NEW_MERCHANT_FUND_AMOUNT
+                constants.NEW_MERCHANT_FUND_AMOUNT
             )
         )
     #EndFunction
@@ -404,7 +414,7 @@ class Market:
                 #EndIf
 
                 #Calculate Transfer Ammount
-                transfer_ammount = min(int(Buyer[Market.MERCHANT_PRICE_STR]), int(Seller[Market.MERCHANT_PRICE_STR]))
+                transfer_ammount = min(int(Buyer[constants.MERCHANT_PRICE_STR]), int(Seller[constants.MERCHANT_PRICE_STR]))
 
                 #Request Miner to add TXN in BlockChain
                 self.Request_Miner_to_Add_TXN_to_BlockChain(
@@ -441,7 +451,7 @@ class Market:
             print("From Addr    : {}\n".format(Client_Address))
 
             #If Merchant Expects Latest OrderBook, send it to them
-            if (Data == Market.CLIENT_ORDERBOOK_REQUEST_STR):
+            if (Data == constants.CLIENT_ORDERBOOK_REQUEST_STR):
 
                 print("Sending OrderBook: \n{}\n\nto Client: {}".format(self.OrderBook, Client_Address))
                 self.Send_OrderBook_to_Merchant(Client_Address)
@@ -466,16 +476,16 @@ class Market:
                 #print("json obj type: {}".format(type(Merchant_OrderBook_Add_JSON)))
 
                 #if Merchant doesnt Exists in ListOfUniqueMerchants
-                if (not(self.Check_if_Merchant_Exists_in_ExistingMerchant_List(Merchant_OrderBook_Add_JSON["pubkey"]))):
+                if (not(self.Check_if_Merchant_Exists_in_ExistingMerchant_List(Merchant_OrderBook_Add_JSON[constants.MERCHANT_PUBLIC_KEY_STR]))):
 
                     #Add Merchant to Existing Merchant List
                     self.Add_Merchant_to_ExistingMerchants_List(
-                        Merchant_OrderBook_Add_JSON["pubkey"],
+                        Merchant_OrderBook_Add_JSON[constants.MERCHANT_PUBLIC_KEY_STR],
                         Client_Address
                     )
 
                     #Request Miner to give new merchant funds
-                    self.Request_Miner_to_give_New_Merchant_Funds(Merchant_OrderBook_Add_JSON["pubkey"])
+                    self.Request_Miner_to_give_New_Merchant_Funds(Merchant_OrderBook_Add_JSON[constants.MERCHANT_PUBLIC_KEY_STR])
                     
                 #This isnt a new merchant
                 else:
@@ -483,14 +493,14 @@ class Market:
                 #EndIf
 
                 #if Merchant doesnt Exists in OrderBook
-                if (not(self.Check_if_Merchant_Exists_in_OrderBook(Merchant_OrderBook_Add_JSON["pubkey"]))):
+                if (not(self.Check_if_Merchant_Exists_in_OrderBook(Merchant_OrderBook_Add_JSON[constants.MERCHANT_PUBLIC_KEY_STR]))):
 
                     #Add Merchant Request to OrderBook
                     self.Add_Merchant_To_OrderBook(
-                        Merchant_OrderBook_Add_JSON["type"],
-                        Merchant_OrderBook_Add_JSON["pubkey"],
-                        Merchant_OrderBook_Add_JSON["item"],
-                        Merchant_OrderBook_Add_JSON["price"]
+                        Merchant_OrderBook_Add_JSON[constants.MERCHANT_TYPE_STR],
+                        Merchant_OrderBook_Add_JSON[constants.MERCHANT_PUBLIC_KEY_STR],
+                        Merchant_OrderBook_Add_JSON[constants.MERCHANT_COMODITY_STR],
+                        Merchant_OrderBook_Add_JSON[constants.MERCHANT_PRICE_STR]
                     )
                 #A Merchant request already exists in orderbook
                 else:
@@ -569,10 +579,10 @@ class Market:
         index = 1
         for current_order in self.OrderBook:
             print("\nMerchant {}".format(index))
-            print("Merchant Type : {}".format(current_order[Market.MERCHANT_TYPE_STR]))
-            print("Merchant Key  : {}".format(current_order[Market.MERCHANT_PUBLIC_KEY_STR]))
-            print("Merchant Item : {}".format(current_order[Market.MERCHANT_COMODITY_STR]))
-            print("Merchant Price: {}".format(current_order[Market.MERCHANT_PRICE_STR]))
+            print("Merchant Type : {}".format(current_order[constants.MERCHANT_TYPE_STR]))
+            print("Merchant Key  : {}".format(current_order[constants.MERCHANT_PUBLIC_KEY_STR]))
+            print("Merchant Item : {}".format(current_order[constants.MERCHANT_COMODITY_STR]))
+            print("Merchant Price: {}".format(current_order[constants.MERCHANT_PRICE_STR]))
 
             index += 1
         # EndFor
@@ -636,13 +646,13 @@ def main():
 
     market = Market(ip, server_for_client_port, ip, client_for_miner_port)
     
-    market.Request_Miner_to_give_New_Merchant_Funds("1")
-    market.Request_Miner_to_give_New_Merchant_Funds("2")
+    #market.Request_Miner_to_give_New_Merchant_Funds("1")
+    #market.Request_Miner_to_give_New_Merchant_Funds("2")
 
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
+    #market.Add_Merchant_To_OrderBook(constants.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
+    #market.Add_Merchant_To_OrderBook(constants.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
+    #market.Add_Merchant_To_OrderBook(constants.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
+    #market.Add_Merchant_To_OrderBook(constants.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
 
 
     #market.Print_OrderBook()
@@ -673,7 +683,7 @@ def main():
     #         print("From Addr    : {}\n".format(Client_Address))
 
     #         #If Merchant Expects Latest OrderBook, send it to them
-    #         if (Data == Market.CLIENT_ORDERBOOK_REQUEST_STR):
+    #         if (Data == constants.CLIENT_ORDERBOOK_REQUEST_STR):
 
     #             print("Sending OrderBook: \n{}\n\nto Client: {}".format(market.OrderBook, Client_Address))
     #             market.Send_OrderBook_to_Merchant(Client_Address)

@@ -1,38 +1,39 @@
 import hashFunction
 import json
 import socket
+import constants
 
 class Miner:
 
 # --------------------------------- CONSTANTS
 
-    MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
-    CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
-    DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
-    UDP_DATA_BUFFER_SIZE = 8192                                 #UDP Incomming data buffer size
-    NEW_MERCHANT_FUND_AMOUNT = 100                              #Funds given to new merchants
-    MINER_DEFAULT_ADDRESS = 0                                   #Default miner address
+    # MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
+    # CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
+    # DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
+    # UDP_DATA_BUFFER_SIZE = 32768                                #UDP Incomming data buffer size
+    # NEW_MERCHANT_FUND_AMOUNT = 100                              #Funds given to new merchants
+    # MINER_DEFAULT_ADDRESS = 0                                   #Default miner address
 
-    MINER_MINING_DIFFICULTY_LEVEL = 3                           #
+    # MINER_MINING_DIFFICULTY_LEVEL = 3                           #
 
-    MINER_BLOCKCHAIN_PREVIOUS_HASH_STR = "PrevHash"             #
-    MINER_BLOCKCHAIN_DATA_STR = "Data"                          #
-    MINER_BLOCKCHAIN_NONCE_STR = "Nonce"                        #
-    MINER_BLOCKCHAIN_COINBASE_STR = "CoinBase"                  #
+    # MINER_BLOCKCHAIN_PREVIOUS_HASH_STR = "PrevHash"             #
+    # MINER_BLOCKCHAIN_DATA_STR = "Data"                          #
+    # MINER_BLOCKCHAIN_NONCE_STR = "Nonce"                        #
+    # MINER_BLOCKCHAIN_COINBASE_STR = "CoinBase"                  #
 
-    MINER_BLOCKCHAIN_GENESIS_PREV_HASH = "0000000000000000000000000000000000000000000000000000000000000000"
+    # MINER_BLOCKCHAIN_GENESIS_PREV_HASH = "0000000000000000000000000000000000000000000000000000000000000000"
 
 # --------------------------------- CONSTRUCTOR
 
     def __init__(self, server_ip, server_port):
         
         self.Current_Block_Number = 1
-        self.Previous_Block_Hash = Miner.MINER_BLOCKCHAIN_GENESIS_PREV_HASH
+        self.Previous_Block_Hash = constants.MINER_BLOCKCHAIN_GENESIS_PREV_HASH
         self.New_Block_Add_Request = ""
         
         #Final BlockChain to send to everyone as dictionary
         self.Entire_BlockChain = {}
-        self.Mining_Difficulty_Level = Miner.MINER_MINING_DIFFICULTY_LEVEL
+        self.Mining_Difficulty_Level = constants.MINER_MINING_DIFFICULTY_LEVEL
 
         # Socket Handling As Server For market.py & client.py
         self.ServerForClient_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -64,10 +65,10 @@ class Miner:
         if(self.Current_Block_Number == 1):
             blockdata = {
                 self.Current_Block_Number : {
-                    Miner.MINER_BLOCKCHAIN_PREVIOUS_HASH_STR : self.Previous_Block_Hash,
-                    Miner.MINER_BLOCKCHAIN_DATA_STR : self.New_Block_Add_Request,
-                    Miner.MINER_BLOCKCHAIN_NONCE_STR : testNonce,
-                    Miner.MINER_BLOCKCHAIN_COINBASE_STR : "Initially %s coins allotted to new client" % Miner.NEW_MERCHANT_FUND_AMOUNT
+                    constants.MINER_BLOCKCHAIN_PREVIOUS_HASH_STR : self.Previous_Block_Hash,
+                    constants.MINER_BLOCKCHAIN_DATA_STR : self.New_Block_Add_Request,
+                    constants.MINER_BLOCKCHAIN_NONCE_STR : testNonce,
+                    constants.MINER_BLOCKCHAIN_COINBASE_STR : "Initially %s coins allotted to new client" % constants.NEW_MERCHANT_FUND_AMOUNT
                 }
             }
             print("\nInitiating The Genesis Block!")
@@ -76,9 +77,9 @@ class Miner:
             # The Block Is Not a Genesis Block
             blockdata = {
                 self.Current_Block_Number : {
-                    Miner.MINER_BLOCKCHAIN_PREVIOUS_HASH_STR : self.Previous_Block_Hash,
-                    Miner.MINER_BLOCKCHAIN_DATA_STR : self.New_Block_Add_Request,
-                    Miner.MINER_BLOCKCHAIN_NONCE_STR : testNonce
+                    constants.MINER_BLOCKCHAIN_PREVIOUS_HASH_STR : self.Previous_Block_Hash,
+                    constants.MINER_BLOCKCHAIN_DATA_STR : self.New_Block_Add_Request,
+                    constants.MINER_BLOCKCHAIN_NONCE_STR : testNonce
                 }
             }
         #EndIf
@@ -94,7 +95,7 @@ class Miner:
             # Finding CORRECT NONCE
             testNonce = testNonce + 1
             # Starting from a testNonce and WORKING to find the nonce giving the first two digits of SHA As 0
-            blockdata[self.Current_Block_Number][Miner.MINER_BLOCKCHAIN_NONCE_STR] = testNonce
+            blockdata[self.Current_Block_Number][constants.MINER_BLOCKCHAIN_NONCE_STR] = testNonce
             currentBlockHash = hashFunction.hash_object(blockdata)
         print("The Block Is Mined, Adding the Block to the Central Ledger")
         print(currentBlockHash)
@@ -127,17 +128,17 @@ class Miner:
 # --------------------------------- HANDLERS
 
     def Handle_Incoming_Request_from_Client(self):
-        incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(Miner.UDP_DATA_BUFFER_SIZE)
-        Incomming_Data = incomming_UDP_Data[0].decode(Miner.DATA_ENCODING_FORMAT)
+        incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(constants.UDP_DATA_BUFFER_SIZE)
+        Incomming_Data = incomming_UDP_Data[0].decode(constants.DATA_ENCODING_FORMAT)
         Client_Address = incomming_UDP_Data[1]
 
         if (len(Incomming_Data)):
             print("\nReceived: '{}' from 'localhost:{}'".format(Incomming_Data, Client_Address[1]))
 
             #If Client Expects Latest BlockChain, send it to them
-            if (Incomming_Data == Miner.MINER_BLOCKCHAIN_REQUEST_STR):
+            if (Incomming_Data == constants.MINER_BLOCKCHAIN_REQUEST_STR):
                 print("\nSending: '{}' to 'localhost:{}'".format("BlockChain", Client_Address[1]))
-                self.ServerForClient_Socket.sendto(str(self.Entire_BlockChain).encode(Miner.DATA_ENCODING_FORMAT), Client_Address)
+                self.ServerForClient_Socket.sendto(str(self.Entire_BlockChain).encode(constants.DATA_ENCODING_FORMAT), Client_Address)
             
             #Market sent TXN Request
             #Incomming_Data format must be: TXN:FROM_ADDR,TO_ADDR,AMOUNT
