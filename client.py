@@ -9,8 +9,7 @@ from os import system
 
 class Client:
 
-# --------------------------------- CONSTANTS
-
+    #CONSANTS
     MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
     CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
     DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
@@ -31,17 +30,16 @@ class Client:
     MERCHANT_TYPE_BUYER_STR = "B"                               #JSON VAL: Merchant Type: Buyer
     MERCHANT_TYPE_SELLER_STR = "S"                              #JSON VAL: Merchant Type: Seller
 
-# --------------------------------- CONSTRUCTOR
-
+#   -----------------------------Default Constructor-----------------------------------------------
+    #                                 Only Variable intilaized
     def __init__(self, market_ip, market_port, miner_ip, miner_port):
 
         # Socket Handling As Client For market.py
         self.ClientForMarket_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.ClientForMarket_SocketAddr = (market_ip, market_port)
-        self.ClientForMarket_Socket.connect(self.ClientForMarket_SocketAddr)
-
         #self.ClientForMarket_Socket.settimeout(None)
         #self.ClientForMarket_Socket.bind(('', random.randint(10000, 50000)))
+        self.ClientForMarket_Socket.connect(self.ClientForMarket_SocketAddr)
 
         # Socket Handling As Client For miner.py
         self.ClientForMiner_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -62,9 +60,10 @@ class Client:
         self.BlockChain = {}        # Entire BlockChain as dictionary
     #EndFunction
 
-# --------------------------------- MERCHANT
+    #OK
 
-    #Function to return transcation info from a given block of the blockchain
+#   -------------------------- Function to return transcation info from a given block of the blockchain ------------------------- 
+    #                              Receives targerblock and returns Sender addy, Receiver addy and ammount as tupple
     def Extract_Data_from_BlockChain_BlockData(self, target_block_data):
         sender_addr = ""
         receiver_addr = ""
@@ -94,7 +93,10 @@ class Client:
         return ((sender_addr, receiver_addr, ammount_transfered))
     #EndFunction
 
-    #Blockchain traverse to get final balance of given Public Address
+    #OK
+
+#----------------------------------------- Blockchain traverse to get final balance of given Public Address -----------------------------
+    #                                                           returns net_merchant_balance int
     def Get_Merchant_Current_Balance(self, merchant_public_key):
 
         balance_given_to_merchant = 0
@@ -147,21 +149,41 @@ class Client:
         return net_merchant_balance
     # EndFunction
 
-# --------------------------------- SOCKET RECEIVE
-    
-    #Receives Data from Market
+
+#---------------------------------- SOCKET --------------------------------------
+    #SOCKET
+    #---------------- Sender function (Market) -------------------
+    #                   Encodes and send to Market
+    def Send_Data_to_Market(self, data_to_send):
+        #self.ClientForMarket_Socket.connect(self.ClientForMarket_SocketAddr)
+        self.ClientForMarket_Socket.sendto(
+            str(data_to_send).encode(Client.DATA_ENCODING_FORMAT),
+            self.ClientForMarket_SocketAddr
+        )
+    #EndFunction
+
+    #SOCKET
+
+#---------------- Receiver Function (Market) ------------------
+    #                   Rcvs Data from Market
     def Get_Data_from_Market(self):
+        print("Getting Data from Market")
         try:
             incomming_UDP_Data = self.ClientForMarket_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
             Data = incomming_UDP_Data[0].decode(Client.DATA_ENCODING_FORMAT)
+            print ("ORDERBOOK  = {%s}".format(Data))
             return ((Data, incomming_UDP_Data[1]))
+
         except:
             #print("\nException During Market Data Read: {}\n".format(e))
             return ("", "")
         #EndTry
     #EndFunction
-    
-    #Receives Data from Miner
+
+    #SOCKET
+
+#------------------- Receiver Function (Miner) ---------------
+    #                   Rcvs Data from Miner
     def Get_Data_from_Miner(self):
         try:
             incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(Client.UDP_DATA_BUFFER_SIZE)
@@ -172,18 +194,10 @@ class Client:
         #EndTry
     #EndFunction
 
-# --------------------------------- SOCKET SEND
-    
-    #Encodes Data and sends to Market
-    def Send_Data_to_Market(self, data_to_send):
-        #self.ClientForMarket_Socket.connect(self.ClientForMarket_SocketAddr)
-        self.ClientForMarket_Socket.sendto(
-            str(data_to_send).encode(Client.DATA_ENCODING_FORMAT),
-            self.ClientForMarket_SocketAddr
-        )
-    #EndFunction
+    #SOCKET
 
-    #Encodes Data and sends to Miner
+#--------------------------- Sender function (Miner) -------------------
+    #                   Encodes and send to Miner
     def Send_Data_to_Miner(self, data_to_send):
         self.ClientForMiner_Socket.sendto(
             data_to_send.encode(Client.DATA_ENCODING_FORMAT), 
@@ -191,8 +205,7 @@ class Client:
         )
     #EndFunction
 
-# --------------------------------- UPDATERS
-    
+#------------------------------- Update variable with uptodate data---------------------------
     def Update_Current_OrderBook(self, new_orderbook):
         self.OrderBook = list(new_orderbook)
     #EndFunction
@@ -201,23 +214,48 @@ class Client:
     def Update_Current_BlockChain(self, new_block_chain):
         self.BlockChain = dict(new_block_chain)
     #EndFunction
+#-----------------------------------------------------------------------------------------------    
 
-# --------------------------------- REQUESTS
 
-    #Requests market to send latest OrderBook
-    #This function is used in threading for constant update of OrderBook
+#------------------ Function to Request Orderbook from Market ---------------------------------
+    #                       Sends CLIENT_ORDERBOOK_REQUEST_STR (order) to market
+    #                       Revcs orderbook from market
+    #                       Updates the orderbook variable to latest Data
     def Request_Latest_OrderBook_from_Market(self):
         self.Send_Data_to_Market(Client.CLIENT_ORDERBOOK_REQUEST_STR)
     #EndFunction
 
-    #Requests miner to send latest BlockChain
-    #This function is used in threading for constant update of BlockChain
+    def Handle_Incoming_OrderBook_from_Market_THREADED(self):
+        while True:
+            self.Request_Latest_OrderBook_from_Market()
+            print("x")
+            OrderBook_Data_RAW, Market_Addr = self.Get_Data_from_Market()
+
+            if (len(OrderBook_Data_RAW)):
+                print("Received: '{}' from 'localhost:{}'".format(OrderBook_Data_RAW, Market_Addr[1]))
+
+                Updated_OrderBook = literal_eval(OrderBook_Data_RAW)
+
+                self.Update_Current_OrderBook(Updated_OrderBook)
+
+                #exit once we receive our orderbook
+                #break
+            #EndIf
+        #EndWhile
+    #EndFunction
+
+    #SOCKET
+
+#------------------ Function to Request Blockchain from Miner ---------------------------------
+    #                       Sends MINER_BLOCKCHAIN_REQUEST_STR to Miner
+    #              ***This function is used in threading for constant update of BlockChain***
+
     def Request_Latest_BlockChain_from_Miner(self):
         self.Send_Data_to_Miner(Client.MINER_BLOCKCHAIN_REQUEST_STR)
     #EndFunction
+    # ----------------------------- SOCKET -----------------------------
 
-# --------------------------------- CONSOLE 
-    
+#--------------------------------- Basic CONSOLE commands -----------------------------
     def Console_ClearScreen(self):
         system("cls")
     #EndFunction
@@ -230,10 +268,10 @@ class Client:
     def Console_Delay(self, time_s):
         time.sleep(time_s)
     #EndFunction
+#----------------------------------------------------------------------------------------
 
-# --------------------------------- HANDLERS
-
-    #Username Validation
+    # ---------------------------------------- HANDLERS -------------------------------------------
+# --------------------------------------- Username Validation --------------------------------------
     def Handle_New_User(self):
         #Get Current User name
         self.Current_Client_Username = self.Get_Valid_Username_from_User()
@@ -252,12 +290,12 @@ class Client:
         self.Console_Delay(1)
     #EndFunction
 
-    #Place bid on the Market
+#--------------------------- Place bid on the Market ---------------------------
     def Handle_Market_Buy_Sell_Operation(self):
         self.Send_Data_to_Market(self.Get_Signed_Request_Message_for_Market())
     #EndFunction
 
-    #Main Menu Handler
+#---------------------------------- Main Menu Handler ---------------------------
     def Handle_Main_Menu(self):
         while True:
 
@@ -349,47 +387,85 @@ class Client:
         #EndWhile
     #EndFunction
 
-# --------------------------------- THREADED HANDLERS
-    
+
+#-------------------------------- Threaded Constantly updated Blockchain ----------------------------------
     def Handle_Incoming_BlockChain_from_Miner_THREADED(self):
         while True:
-            print("\nAttempting Data Read From Miner..")
             BlockChain_Data_RAW, Miner_Address = self.Get_Data_from_Miner()
+            #print("\nReceived BlockChain, Type = {}\n".format(type(BlockChain_Data_RAW)))
             
             if (len(BlockChain_Data_RAW)):
+                #print("Received BlockChain {}".format(BlockChain_Data_RAW))
 
                 #Updated_BlockChain = json.loads(json.dumps(BlockChain_Data_RAW))
                 Updated_BlockChain = literal_eval(BlockChain_Data_RAW)
                 
-                #print("\nReceived BlockChain:")
-                #self.Print_JSON_Object(Updated_BlockChain)
+                print("\nReceived BlockChain:")
+                self.Print_JSON_Object(Updated_BlockChain)
                 self.Update_Current_BlockChain(Updated_BlockChain)
             
             #EndIf
         #EndWhile
     #EndFunction
+# ----------------------------- HANDLERS -----------------------------
 
-    def Handle_Incoming_OrderBook_from_Market_THREADED(self):
-        while True:
-            print("\nAttempting Data Read From Market..")
-            OrderBook_Data_RAW, Market_Addr = self.Get_Data_from_Market()
+    # ----------------------------- MISC -----------------------------
+    #OK
+    #------------------------ Blockchain Size --------------------
+    def Get_BlockChain_Size(self):
+        #print("BlockChain Blocks: {}".format(self.BlockChain.keys()))
 
-            if (len(OrderBook_Data_RAW)):
-                print("Received: '{}' from 'localhost:{}'".format(OrderBook_Data_RAW, Market_Addr[1]))
-
-                Updated_OrderBook = literal_eval(OrderBook_Data_RAW)
-
-                self.Update_Current_OrderBook(Updated_OrderBook)
-
-            #EndIf
-        #EndWhile
+        #len() on a dict returns number of top level keys in dict
+        return len(self.BlockChain)
     #EndFunction
 
-# --------------------------------- USER
+    #OK
+#------------------------ Print nice beutiful Orderbook --------------------------
+    def Print_OrderBook(self):
 
-    #Checks for duplicate PublicKey
-    #Loops until unique PublicKey is obtained from Username
-    #Checks the Json file for Data regarding keys
+        if (len(self.OrderBook) == 0):
+            print("The order book is empty!")
+            return
+        # EndIf
+
+        index = 1
+        for current_order in self.OrderBook:
+            print("\nMerchant {}".format(index))
+            print("Merchant Type : {}".format(current_order[Client.MERCHANT_TYPE_STR]))
+            print("Merchant Key  : {}".format(current_order[Client.MERCHANT_PUBLIC_KEY_STR]))
+            print("Merchant Item : {}".format(current_order[Client.MERCHANT_COMODITY_STR]))
+            print("Merchant Price: {}".format(current_order[Client.MERCHANT_PRICE_STR]))
+
+            index += 1
+        # EndFor
+    #EndFunction
+
+#-------------------- Print Json object ------------------------
+    def Print_JSON_Object(self, target_object):
+        print('\n', end='')
+
+        print(json.dumps(target_object, indent=4, sort_keys=True))
+        
+        print('\n', end='')
+    #EndFunction
+
+    #OK
+#---------------- Print BlockChain --------------------------
+    def Print_BlockChain(self):
+        self.Print_JSON_Object(self.BlockChain)
+        print("BlockChain Size: {}".format(self.Get_BlockChain_Size()))
+    #EndFunction
+# ----------------------------- MISC -----------------------------
+
+    #-------------- Hash the username --------------------
+    def Get_Hashed_Username(self, target_username):
+        return hashFunction.getSHA(target_username, 5)
+    #EndFunction
+
+#------------------------------------ Username validation----------------------------------------------------------------------------------------------
+    #                           Checks for duplicate PublicKey
+    #                     Loops until unique PublicKey is obtained from Username
+    #                       Checks the Json file for Data regarding keys
     def Get_Valid_Username_from_User(self):
         final_username = ""                 #Valid Username
 
@@ -453,8 +529,9 @@ class Client:
         #Return the valid Username
         return final_username
     #EndFunction
+    #----------------------------------------------------------------EndFunction------------------------------------------------------------------------------
 
-    #Get User Type (Buyer or Seller) From User
+    #-------------------------- User Type (Buyer or Seller) Handler ----------------------------------
     def Get_Valid_UserType_from_User(self):
         input_usertype = str(input("\nEnter 'B' if you're a Buyer or 'S' if a Seller: "))
         
@@ -467,13 +544,13 @@ class Client:
         return input_usertype
     #EndFunction
 
-    #Generate Current User's RSA Keys
+#----------------------- RSA Key generate ---------------------------------------
     def Generate_User_RSA_Keys(self):
         self.Current_Client_Public_Key, self.Current_Client_Private_Key, self.Current_Client_RSA_KEY_OBJ = hashFunction.rsa_genkey()
         self.Current_Client_Public_Key_PEM = self.Current_Client_RSA_KEY_OBJ.public_key()
     #EndFunction
 
-    #Write Userinfo onto the UserDataBase JSON file
+#----------------------- Write Userinfo onto the JSON file -------------------
     def Update_UserDataBase_File(self):
         # Store into json file
         UserDataBaseFile = open(Client.USERDATABASE_FILE_NAME, "a")
@@ -496,8 +573,8 @@ class Client:
         UserDataBaseFile.close()
     #EndFunction
 
-# --------------------------------- DIGITAL SIGNATURE
-    
+
+#---------------------------------------- Digital Signature Verification ---------------------------------
     def Get_Digital_Signature_using_PrivateKey(self, target_message):
         #n = str(random.randint(1,1000))
         #n = self.Current_Client_Username + n
@@ -564,59 +641,9 @@ class Client:
 
         return Market_Request_Message_String
     #EndFunction
+    #------------------------------------------------------------------------------------------------------------
 
-# --------------------------------- MISC
-    
-    #Returns Blockchain Size
-    def Get_BlockChain_Size(self):
-        #print("BlockChain Blocks: {}".format(self.BlockChain.keys()))
-
-        #len() on a dict returns number of top level keys in dict
-        return len(self.BlockChain)
-    #EndFunction
-
-    #Print nice beutiful OrderBook
-    def Print_OrderBook(self):
-
-        if (len(self.OrderBook) == 0):
-            print("\nThe order book is empty!")
-            return
-        # EndIf
-
-        index = 1
-        for current_order in self.OrderBook:
-            print("\nMerchant {}".format(index))
-            print("Merchant Type : {}".format(current_order[Client.MERCHANT_TYPE_STR]))
-            print("Merchant Key  : {}".format(current_order[Client.MERCHANT_PUBLIC_KEY_STR]))
-            print("Merchant Item : {}".format(current_order[Client.MERCHANT_COMODITY_STR]))
-            print("Merchant Price: {}".format(current_order[Client.MERCHANT_PRICE_STR]))
-
-            index += 1
-        # EndFor
-    #EndFunction
-
-    #Print JSON object
-    def Print_JSON_Object(self, target_object):
-        print('\n', end='')
-
-        print(json.dumps(target_object, indent=4, sort_keys=True))
-        
-        print('\n', end='')
-    #EndFunction
-
-    #Print BlockChain
-    def Print_BlockChain(self):
-        self.Print_JSON_Object(self.BlockChain)
-        print("BlockChain Size: {}".format(self.Get_BlockChain_Size()))
-    #EndFunction
-
-    #Return the Hash of username
-    def Get_Hashed_Username(self, target_username):
-        return hashFunction.getSHA(target_username, 5)
-    #EndFunction
-
-# --------------------------------- RUN
-
+#------------------------- For Running Main Loop ---------------------------------
     def RunClient(self):
         #Main loop
         while True:
@@ -627,17 +654,16 @@ class Client:
 
         #EndWhile
     #EndFunction
-
 #EndClass
 
-# --------------------------------- MAIN
+
+#------------------------------------------- MAIN ----------------------------------------------
 def main():
     market_ip = "localhost"
+    market_port = 2600
     miner_ip = market_ip
-    client_for_market_port = 56000
-    client_for_miner_port = 55000
-
-    client = Client(market_ip, client_for_market_port, miner_ip, client_for_miner_port)
+    miner_port = 2500
+    client = Client(market_ip, market_port, miner_ip, miner_port)
     
     #Threading For BlockChain Update
     Client_BlockChain_Update_THREAD = Thread(target=client.Handle_Incoming_BlockChain_from_Miner_THREADED)
@@ -658,6 +684,7 @@ def main():
     #     client.Handle_Incoming_OrderBook_from_Market()
     #     client.Print_OrderBook()
     # #EndWhile
+
 #EndMain
 
 if __name__ == "__main__":
