@@ -6,7 +6,8 @@ from threading import Thread
 
 class Market:
 
-    #CONSANTS
+# --------------------------------- CONSTANTS
+
     MINER_BLOCKCHAIN_REQUEST_STR = "chain"                      #When this is sent to the miner, it sends the BlockChain Back
     CLIENT_ORDERBOOK_REQUEST_STR = "order"                      #When this is sent to the market, it sends the OrderBook Back
     DATA_ENCODING_FORMAT = "utf-8"                              #Data Encoding format for socket programming
@@ -27,13 +28,14 @@ class Market:
     MERCHANT_TYPE_BUYER_STR = "B"                               #JSON VAL: Merchant Type: Buyer
     MERCHANT_TYPE_SELLER_STR = "S"                              #JSON VAL: Merchant Type: Seller
 
-    
+# --------------------------------- CONSTRUCTOR
+
     def __init__(self, server_ip, server_port, client_ip, client_port):
 
         # Socket Handling As Server For client.py
         self.ServerForClient_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.ServerForClient_Socket.bind((server_ip, server_port))
-        self.ServerForClient_Socket.settimeout(2.0)
+        #self.ServerForClient_Socket.settimeout(2.0)
 
         # Socket Handling As Client For miner.py
         self.ClientForMiner_Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -56,6 +58,8 @@ class Market:
         self.ExistingMerchantList = []
     # EndFunction
 
+# --------------------------------- MERCHANT
+    
     #OK
     def Add_Merchant_To_OrderBook(self, merchant_type, merchant_public_key, comodity_to_sell, comodity_price):   
 
@@ -313,16 +317,8 @@ class Market:
         return ((sender_addr, receiver_addr, ammount_transfered))
     #EndFunction
 
-    # ----------------------------- SOCKET -----------------------------
-    #SOCKET
-    def Send_Data_to_Merchant(self, data_to_send, merchant_addr):
-        self.ServerForClient_Socket.sendto(
-            str(data_to_send).encode(Market.DATA_ENCODING_FORMAT), 
-            merchant_addr
-        )
-    #EndFunction
+# --------------------------------- SOCKET RECEIVE
 
-    #SOCKET
     def Get_Data_from_Merchant(self):
         try:
             incomming_UDP_Data = self.ServerForClient_Socket.recvfrom(Market.UDP_DATA_BUFFER_SIZE)
@@ -333,7 +329,6 @@ class Market:
         #EndTry
     #EndFunction
 
-    #SOCKET
     def Get_Data_from_Miner(self):
         try:
             incomming_UDP_Data = self.ClientForMiner_Socket.recvfrom(Market.UDP_DATA_BUFFER_SIZE)
@@ -342,6 +337,15 @@ class Market:
         except:
             return ("", "")
         #EndTry
+    #EndFunction
+
+# --------------------------------- SOCKET SEND
+
+    def Send_Data_to_Merchant(self, data_to_send, merchant_addr):
+        self.ServerForClient_Socket.sendto(
+            str(data_to_send).encode(Market.DATA_ENCODING_FORMAT), 
+            merchant_addr
+        )
     #EndFunction
 
     #SOCKET
@@ -639,17 +643,19 @@ class Market:
 
 def main():
     ip = "localhost"
-    server_port = 2600
-    client_port = 2500
-    market = Market(ip, server_port, ip, client_port)
-    
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
-    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
-    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
-    #market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
+    server_for_client_port = 56000
+    client_for_miner_port = 55000
 
-    #market.Request_Miner_to_give_New_Merchant_Funds("1")
-    #market.Request_Miner_to_give_New_Merchant_Funds("2")
+    market = Market(ip, server_for_client_port, ip, client_for_miner_port)
+    
+    market.Request_Miner_to_give_New_Merchant_Funds("1")
+    market.Request_Miner_to_give_New_Merchant_Funds("2")
+
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "1", "Chair", "50")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "2", "Chair", "40")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_BUYER_STR, "3", "Fan", "30")
+    market.Add_Merchant_To_OrderBook(Market.MERCHANT_TYPE_SELLER_STR, "4", "Fan", "40")
+
 
     #market.Print_OrderBook()
     #market.Remove_From_OrderBook(4)

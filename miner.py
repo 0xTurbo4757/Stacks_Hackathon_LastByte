@@ -19,7 +19,7 @@ class Miner:
     MINER_BLOCKCHAIN_NONCE_STR = "Nonce"                        #
     MINER_BLOCKCHAIN_COINBASE_STR = "CoinBase"                  #
 
-    MINER_BLOCKCHAIN_GENESIS_PREV_HASH = "00000000000000000000000000000000000000000000000000000000000000000"
+    MINER_BLOCKCHAIN_GENESIS_PREV_HASH = "0000000000000000000000000000000000000000000000000000000000000000"
 
     def __init__(self, server_ip, server_port):
         
@@ -185,8 +185,9 @@ def main():
     f.close()
     
     ip = "localhost"
-    server_port = 2500
-    miner = Miner(ip, server_port)
+    server_for_miner_port = 55000
+    
+    miner = Miner(ip, server_for_miner_port)
     miner.RunMiner()
 # EndMain
 
